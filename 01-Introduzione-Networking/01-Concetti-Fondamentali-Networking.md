@@ -36,18 +36,23 @@ Il **modello TCP/IP** è più pratico e si basa su 4 livelli:
 
 **Porta**: Numero che identifica un servizio specifico su un host
 - Range: 0-65535
-- Porte well-known: 0-1023 (HTTP:80, HTTPS:443, SSH:22)
+- Porte well-known (riservate): 0-1023 (HTTP:80, HTTPS:443, SSH:22)
 - Porte registrate: 1024-49151
 - Porte dinamiche: 49152-65535
+
+```java
+// Rappresentazione Java di un indirizzo IP
+InetAddress ip = InetAddress.getByName("192.168.1.1");
+```
 
 ### Il Protocollo TCP
 
 **TCP (Transmission Control Protocol)** è un protocollo orientato alla connessione che garantisce:
 
-✅ **Affidabilità**: Tutti i dati vengono consegnati  
-✅ **Ordine**: I dati arrivano nell'ordine corretto  
-✅ **Controllo errori**: Rileva e corregge errori  
-✅ **Controllo flusso**: Gestisce la velocità di trasmissione  
+✅ **Orientato alla connessione**: Handshake a 3 vie
+✅ **Affidabile**: Conferma ricezione, ritrasmissione
+✅ **Controllo di flusso**: Previene congestione
+✅ **Ordinato**: Pacchetti in sequenza corretta
 
 **Handshake TCP a 3 vie:**
 ```mermaid

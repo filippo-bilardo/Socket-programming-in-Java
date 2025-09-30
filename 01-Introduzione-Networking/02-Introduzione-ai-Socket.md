@@ -76,8 +76,8 @@ Java fornisce un'API ad alto livello che semplifica l'uso dei socket:
 
 ## 🔗 Esempi di Riferimento
 
-- [Esempio 01: Verifica Connettività](./esempi/02-01_TestConnettivita.java) - Testa se una porta è aperta
-- [Esempio 02: Socket Info](./esempi/02-02_SocketInfo.java) - Mostra informazioni sui socket
+- [Esempio 01: Verifica Connettività](./esempi/TestConnettivita.java) - Testa se una porta è aperta
+- [Esempio 02: Socket Info](./esempi/SocketInfo.java) - Mostra informazioni sui socket
 
 ## 💡 Best Practices, Tips & Tricks
 
