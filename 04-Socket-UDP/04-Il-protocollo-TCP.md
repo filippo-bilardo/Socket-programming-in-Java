@@ -895,5 +895,5 @@ nc -v localhost 8080
 
 ---
 
-*Guida creata per il corso "Socket Programming in Java" - ITES "Alessandro Volta"*  
+*Guida creata per il corso "Socket Programming in Java" - ITCS Cannizzaro"*  
 *Versione 1.0 - Ottobre 2025*
