@@ -100,7 +100,7 @@ UDP **non garantisce** consegna:
 ```
 Invio:    [A] [B] [C] [D] [E]
 Rete:     [A] [X] [C] [X] [E]  ← [B] e [D] persi
-Ricezione: [A]     [C]     [E]  ← UDP non rileva/corregge
+Ricezione:[A]     [C]     [E]  ← UDP non rileva/corregge
 ```
 
 **Responsabilità applicazione:**
@@ -159,9 +159,9 @@ String msg2 = receive(); // "World"
  0                   1                   2                   3
  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 ├─────────────────────────────────────────────────────────────────┤
-│          Source Port          │       Destination Port         │
+│          Source Port          │       Destination Port          │
 ├─────────────────────────────────────────────────────────────────┤
-│            Length             │           Checksum             │
+│            Length             │           Checksum              │
 ├─────────────────────────────────────────────────────────────────┤
 │                           Data                                  │
 │                            ...                                  │

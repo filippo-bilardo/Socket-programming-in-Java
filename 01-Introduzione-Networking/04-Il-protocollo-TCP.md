@@ -47,6 +47,26 @@ Il **Transmission Control Protocol (TCP)** è un protocollo di trasporto della s
 └─────────────────────────┘
 ```
 
+### 🏗️ **Modello ISO/OSI**
+
+```
+┌─────────────────────────┐
+│    Applicazione (7)     │ ← HTTP, FTP, SSH, SMTP
+├─────────────────────────┤
+│    Presentazione (6)    │ ← Codifica dati (ASCII, JPEG)
+├─────────────────────────┤
+│    Sessione (5)         │ ← Gestione sessioni
+├─────────────────────────┤
+│    Trasporto (4)        │ ← TCP/UDP (affidabilità)
+├─────────────────────────┤
+│    Rete (3)             │ ← IP (routing)
+├─────────────────────────┤
+│    Collegamento (2)     │ ← Ethernet, WiFi (frame)
+├─────────────────────────┤
+│    Fisico (1)           │ ← Cavi, onde radio (bit)
+└─────────────────────────┘
+```
+
 ### 🎯 **Quando Utilizzare TCP**
 
 **Usa TCP quando serve:**
@@ -354,17 +374,6 @@ socket.setTcpNoDelay(false); // Abilita Nagle per efficienza
 ### 🔍 **Checksum**
 
 TCP calcola un checksum per rilevare errori utilizzando la somma in complemento a uno dei dati:
-
-**Formula matematica:**
-
-\[
-\text{Checksum} = \sim \left( \sum_{i=0}^{n-1} w_i \right) \mod 2^{16}
-\]
-
-Dove:
-- \( w_i \) sono le parole a 16 bit del segmento TCP (inclusi pseudo-header, header TCP e dati)
-- \( \sim \) è il complemento a uno (NOT bit a bit)
-- Il risultato è un valore a 16 bit
 
 ```java
 // Pseudo-codice calcolo checksum

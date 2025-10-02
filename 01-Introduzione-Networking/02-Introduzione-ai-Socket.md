@@ -23,7 +23,7 @@ I socket furono introdotti in **BSD Unix** negli anni '80 come parte dell'implem
 
 ### Tipologie di Socket
 
-#### 1. Socket TCP (SOCK_STREAM)
+#### 1. Socket TCP (SOCK_STREAM, stream socket)
 ```java
 // Socket orientato alla connessione
 Socket clientSocket = new Socket("localhost", 8080);
@@ -31,12 +31,12 @@ ServerSocket serverSocket = new ServerSocket(8080);
 ```
 
 **Caratteristiche**:
-- ✅ Connessione affidabile
-- ✅ Flusso continuo di dati  
-- ✅ Controllo errori automatico
+- Connessione affidabile
+- Flusso continuo di dati  
+- Controllo errori automatico
 - ⚠️ Overhead maggiore
 
-#### 2. Socket UDP (SOCK_DGRAM)
+#### 2. Socket UDP (SOCK_DGRAM, datagram socket)
 ```java
 // Socket senza connessione
 DatagramSocket socket = new DatagramSocket(8080);
