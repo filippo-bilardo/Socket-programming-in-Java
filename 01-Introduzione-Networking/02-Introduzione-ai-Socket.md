@@ -13,13 +13,15 @@ Un **Socket** è un **endpoint di comunicazione** che permette a due processi di
 
 ### Storia e Evoluzione dei Socket
 
-I socket furono introdotti in **BSD Unix** negli anni '80 come parte dell'implementazione TCP/IP. L'API Berkeley Socket divenne rapidamente lo standard de facto per la programmazione di rete.
+I socket furono introdotti per la prima volta nel 1983 con **Berkeley Software Distribution (BSD) 4.2**. L'API Berkeley Sockets è diventata lo standard de facto per la programmazione di rete e influenza ancora oggi le implementazioni moderne.
 
-**Evoluzione**:
+**Evoluzione temporale:**
 - **1981**: Prima implementazione in BSD 4.1c
-- **1983**: API standardizzata in BSD 4.2  
-- **1990s**: Portati su Windows (Winsock)
-- **Oggi**: Supportati in tutti i linguaggi moderni
+- **1983**: BSD Sockets (Berkeley)
+- **1991**: Windows Sockets (Winsock)
+- **1995**: Java Socket API
+- **2008**: HTML5 WebSockets
+- **Oggi**: Supportati in tutti i linguaggi moderni (Socket.io, WebRTC, QUIC, ecc.) 
 
 ### Tipologie di Socket
 
@@ -47,6 +49,39 @@ DatagramSocket socket = new DatagramSocket(8080);
 - 📦 Messaggi discreti (datagrammi)
 - 🚫 Nessuna garanzia di consegna
 - ⚡ Overhead minimo
+
+#### 3. **Socket Raw**
+Permettono l'accesso diretto ai protocolli di livello inferiore (IP, ICMP). Richiedono privilegi di amministratore e sono usati per:
+- Implementare protocolli personalizzati
+- Network monitoring e debugging
+- Security tools (port scanning, packet crafting)
+
+#### 4. **Socket Unix Domain (UDS)**
+Per comunicazione **inter-process** sulla stessa macchina:
+```python
+# Esempio Socket Unix
+import socket
+
+sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+sock.bind("/tmp/my_socket")
+```
+
+### Architettura dei Socket nel Sistema
+
+```
+┌─────────────────┐    ┌─────────────────┐
+│   Applicazione  │    │   Applicazione  │
+├─────────────────┤    ├─────────────────┤
+│   Socket API    │ ←→ │   Socket API    │
+├─────────────────┤    ├─────────────────┤
+│  TCP/UDP Layer  │    │  TCP/UDP Layer  │
+├─────────────────┤    ├─────────────────┤
+│    IP Layer     │    │    IP Layer     │
+├─────────────────┤    ├─────────────────┤
+│ Physical Network│ ←→ │ Physical Network│
+└─────────────────┘    └─────────────────┘
+    Client Side            Server Side
+```
 
 ### Socket API POSIX
 

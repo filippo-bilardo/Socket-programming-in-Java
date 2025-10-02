@@ -28,21 +28,57 @@ Il **modello TCP/IP** è più pratico e si basa su 4 livelli:
 1. Accesso Rete  - Ethernet, WiFi
 ```
 
-### Indirizzi IP e Porte
+### Indirizzi IP e Porte: Approfondimento Tecnico
 
-**Indirizzo IP**: Identificatore univoco di un dispositivo sulla rete
-- **IPv4**: 192.168.1.1 (32 bit)
-- **IPv6**: 2001:db8::1 (128 bit)
+#### **Indirizzi IP (Internet Protocol)**
 
-**Porta**: Numero che identifica un servizio specifico su un host
-- Range: 0-65535
-- Porte well-known (riservate): 0-1023 (HTTP:80, HTTPS:443, SSH:22)
-- Porte registrate: 1024-49151
-- Porte dinamiche: 49152-65535
+**IPv4** (32 bit):
+```
+Formato: a.b.c.d (es. 192.168.1.100)
+Range: 0.0.0.0 - 255.255.255.255
+Classi:
+- Classe A: 1.0.0.0   - 126.255.255.255  (8 bit rete)
+- Classe B: 128.0.0.0 - 191.255.255.255  (16 bit rete)
+- Classe C: 192.0.0.0 - 223.255.255.255  (24 bit rete)
+```
 
-```java
-// Rappresentazione Java di un indirizzo IP
-InetAddress ip = InetAddress.getByName("192.168.1.1");
+**Indirizzi Speciali:**
+- `127.0.0.1` - **Loopback** (localhost)
+- `0.0.0.0` - **Any address** (bind su tutte le interfacce)
+- `192.168.x.x`, `10.x.x.x`, `172.16-31.x.x` - **Reti private**
+- `224.0.0.0-239.255.255.255` - **Multicast**
+
+**IPv6** (128 bit):
+```
+Formato: xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx
+Esempio: 2001:0db8:85a3:0000:0000:8a2e:0370:7334
+Abbreviato: 2001:db8:85a3::8a2e:370:7334
+Loopback: ::1
+```
+
+#### **Porte (Port Numbers)**
+
+**Classificazione delle Porte:**
+```
+0-1023:     Well-known ports (privilegiate)
+1024-49151: Registered ports (applicazioni)
+49152-65535: Dynamic/Private ports (effimere)
+```
+
+**Porte Famose:**
+```
+20/21   - FTP (File Transfer Protocol)
+22      - SSH (Secure Shell)
+23      - Telnet
+25      - SMTP (Simple Mail Transfer Protocol)
+53      - DNS (Domain Name System)
+67/68   - DHCP (Dynamic Host Configuration Protocol)
+80      - HTTP (HyperText Transfer Protocol)
+110     - POP3 (Post Office Protocol 3)
+143     - IMAP (Internet Message Access Protocol)
+443     - HTTPS (HTTP Secure)
+993     - IMAPS (IMAP Secure)
+995     - POP3S (POP3 Secure)
 ```
 
 ### Il Protocollo TCP
