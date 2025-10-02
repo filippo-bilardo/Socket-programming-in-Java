@@ -356,9 +356,11 @@ socket.setTcpNoDelay(false); // Abilita Nagle per efficienza
 TCP calcola un checksum per rilevare errori utilizzando la somma in complemento a uno dei dati:
 
 **Formula matematica:**
+
 \[
 \text{Checksum} = \sim \left( \sum_{i=0}^{n-1} w_i \right) \mod 2^{16}
 \]
+
 Dove:
 - \( w_i \) sono le parole a 16 bit del segmento TCP (inclusi pseudo-header, header TCP e dati)
 - \( \sim \) è il complemento a uno (NOT bit a bit)
