@@ -45,19 +45,58 @@ I socket UDP (User Datagram Protocol) rappresentano una delle modalità di comun
 // - Sincronizzazione orologi
 ```
 
-### Architettura Socket UDP in Java
+### Architettura Socket UDP in Java 
 
-#### Classi Principali
+#### DatagramSocket
+
 ```java
-// DatagramSocket - Socket per invio/ricezione
-DatagramSocket socket = new DatagramSocket();
-
-// DatagramPacket - Contenitore per dati + indirizzamento
-DatagramPacket packet = new DatagramPacket(buffer, buffer.length, 
-                                          address, port);
+// Creazione socket UDP
+DatagramSocket socket = new DatagramSocket();        // Porta casuale
+DatagramSocket socket = new DatagramSocket(8080);    // Porta specifica
+DatagramSocket socket = new DatagramSocket(8080, 
+    InetAddress.getByName("192.168.1.100"));        // IP e porta specifici
 
 // InetAddress - Rappresentazione indirizzi IP
 InetAddress address = InetAddress.getByName("192.168.1.100");
+// Contenitore per dati + indirizzamento
+DatagramPacket packet = new DatagramPacket(buffer, buffer.length, 
+                                          address, port);
+```
+
+#### DatagramPacket
+
+```java
+// Packet per invio
+byte[] data = "Hello UDP".getBytes();
+InetAddress address = InetAddress.getByName("localhost");
+DatagramPacket packet = new DatagramPacket(data, data.length, address, 8080);
+
+// Packet per ricezione
+byte[] buffer = new byte[1024];
+DatagramPacket receivePacket = new DatagramPacket(buffer, buffer.length);
+```
+
+#### Invio e Ricezione
+
+```java
+// Client UDP
+DatagramSocket socket = new DatagramSocket();
+String message = "Hello Server";
+byte[] data = message.getBytes();
+
+DatagramPacket packet = new DatagramPacket(data, data.length, 
+    InetAddress.getByName("localhost"), 8080);
+socket.send(packet);
+
+// Server UDP
+DatagramSocket socket = new DatagramSocket(8080);
+byte[] buffer = new byte[1024];
+DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+socket.receive(packet); // Bloccante
+
+String received = new String(packet.getData(), 0, packet.getLength());
+InetAddress clientAddress = packet.getAddress();
+int clientPort = packet.getPort();
 ```
 
 #### Flusso di Comunicazione
