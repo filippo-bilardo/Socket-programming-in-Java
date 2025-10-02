@@ -25,11 +25,11 @@
 
 Il **Transmission Control Protocol (TCP)** è un protocollo di trasporto della suite TCP/IP che fornisce:
 
-- ✅ **Connessione affidabile** tra due host
-- ✅ **Consegna garantita** dei dati
-- ✅ **Ordinamento** dei pacchetti
-- ✅ **Controllo di flusso** e congestione
-- ✅ **Rilevamento e correzione errori**
+- **Connessione affidabile** tra due host
+- **Consegna garantita** dei dati
+- **Ordinamento** dei pacchetti
+- **Controllo di flusso** e congestione
+- **Rilevamento e correzione errori**
 
 ### 🌐 **Posizione nel Stack TCP/IP**
 
@@ -49,7 +49,7 @@ Il **Transmission Control Protocol (TCP)** è un protocollo di trasporto della s
 
 ### 🎯 **Quando Utilizzare TCP**
 
-**✅ Usa TCP quando serve:**
+**Usa TCP quando serve:**
 - Affidabilità nella consegna dati
 - Ordine corretto dei messaggi
 - Controllo automatico degli errori
@@ -73,13 +73,19 @@ TCP stabilisce una **connessione** prima di trasmettere dati:
 
 ```
 Client                    Server
-   │                        │
-   │──── SYN ──────────────►│  1. Richiesta connessione
-   │◄─── SYN+ACK ──────────│  2. Accettazione + conferma
-   │──── ACK ──────────────►│  3. Conferma finale
-   │                        │
-   │═══ CONNESSIONE ═══════│  ← Dati possono fluire
-   │                        │
+    │                        │
+    │──── SYN ──────────────►│  1. Richiesta connessione
+    │◄─── SYN+ACK ───────────│  2. Accettazione + conferma
+    │──── ACK ──────────────►│  3. Conferma finale
+    │                        │
+    │═══ CONNESSIONE ════════│  ← Dati possono fluire
+    │                        │
+    │──── FIN ──────────────►│  4. Richiesta chiusura
+    │◄──── ACK ──────────────│  5. Conferma chiusura
+    │◄──── FIN ──────────────│  6. Chiusura dal server
+    │──── ACK ──────────────►│  7. Conferma finale
+    │                        │
+    │════ DISCONNESSO ═══════│  ← Connessione chiusa
 ```
 
 ### 📦 **2. Affidabilità**
@@ -153,7 +159,7 @@ TCP rileva e gestisce la congestione di rete:
  0                   1                   2                   3
  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 ├─────────────────────────────────────────────────────────────────┤
-│          Source Port          │       Destination Port         │
+│          Source Port          │       Destination Port          │
 ├─────────────────────────────────────────────────────────────────┤
 │                        Sequence Number                          │
 ├─────────────────────────────────────────────────────────────────┤
@@ -204,13 +210,13 @@ Client                           Server
    │──── SYN seq=100 ──────────────►│  1. Client → Server: "Voglio connettermi"
    │                                │     SYN=1, seq=100
    │                                │
-   │◄── SYN+ACK seq=200,ack=101 ───│  2. Server → Client: "OK, anche io"  
+   │◄── SYN+ACK seq=200,ack=101 ────│  2. Server → Client: "OK, anche io"  
    │                                │     SYN=1, ACK=1, seq=200, ack=101
    │                                │
    │──── ACK seq=101,ack=201 ──────►│  3. Client → Server: "Perfetto!"
    │                                │     ACK=1, seq=101, ack=201
    │                                │
-   │════════ CONNESSO ═════════════│     Connessione stabilita
+   │════════ CONNESSO ══════════════│     Connessione stabilita
 ```
 
 #### **Implementazione Java:**
@@ -233,16 +239,16 @@ Client                           Server
    │──── FIN seq=300 ──────────────►│  1. Client: "Ho finito di inviare"
    │                                │     FIN=1, seq=300
    │                                │
-   │◄──── ACK ack=301 ─────────────│  2. Server: "Ho ricevuto il tuo FIN"
+   │◄──── ACK ack=301 ──────────────│  2. Server: "Ho ricevuto il tuo FIN"
    │                                │     ACK=1, ack=301
    │                                │
-   │◄──── FIN seq=400 ─────────────│  3. Server: "Anch'io ho finito"  
+   │◄──── FIN seq=400 ──────────────│  3. Server: "Anch'io ho finito"  
    │                                │     FIN=1, seq=400
    │                                │
    │──── ACK ack=401 ──────────────►│  4. Client: "Chiusura confermata"
    │                                │     ACK=1, ack=401
    │                                │
-   │══════ DISCONNESSO ═══════════│     Connessione chiusa
+   │══════ DISCONNESSO ═════════════│     Connessione chiusa
 ```
 
 #### **Implementazione Java:**
@@ -292,7 +298,7 @@ TCP Header Window = 2  ← Receiver dice: "Ho spazio per 2"
 
 ```java
 public class SlidingWindow {
-    private int windowSize;      // Dimensione finestra
+    private int windowSize;     // Dimensione finestra
     private int base;           // Primo byte non confermato  
     private int nextSeq;        // Prossimo numero sequenza
     
@@ -347,7 +353,16 @@ socket.setTcpNoDelay(false); // Abilita Nagle per efficienza
 
 ### 🔍 **Checksum**
 
-TCP calcola un checksum per rilevare errori:
+TCP calcola un checksum per rilevare errori utilizzando la somma in complemento a uno dei dati:
+
+**Formula matematica:**
+\[
+\text{Checksum} = \sim \left( \sum_{i=0}^{n-1} w_i \right) \mod 2^{16}
+\]
+Dove:
+- \( w_i \) sono le parole a 16 bit del segmento TCP (inclusi pseudo-header, header TCP e dati)
+- \( \sim \) è il complemento a uno (NOT bit a bit)
+- Il risultato è un valore a 16 bit
 
 ```java
 // Pseudo-codice calcolo checksum
@@ -865,7 +880,7 @@ nc -v localhost 8080
 
 ## 🎯 **Riassunto Chiave**
 
-### ✅ **Vantaggi TCP**
+### **Vantaggi TCP**
 - 🛡️ **Affidabilità** - Consegna garantita
 - 📊 **Ordinamento** - Dati nell'ordine corretto  
 - 🔄 **Controllo flusso** - Previene overflow
@@ -879,12 +894,12 @@ nc -v localhost 8080
 - 🔄 **Complessità** - Algoritmi controllo interno
 
 ### 🎯 **Quando Usare TCP**
-- ✅ **Web applications** (HTTP/HTTPS)
-- ✅ **File transfer** (FTP, SFTP)  
-- ✅ **Email** (SMTP, IMAP)
-- ✅ **Database** connections
-- ✅ **Chat applications**
-- ✅ **API REST**
+- **Web applications** (HTTP/HTTPS)
+- **File transfer** (FTP, SFTP)  
+- **Email** (SMTP, IMAP)
+- **Database** connections
+- **Chat applications**
+- **API REST**
 
 ### 🚫 **Quando NON Usare TCP**
 - ❌ **Gaming real-time** (meglio UDP)
