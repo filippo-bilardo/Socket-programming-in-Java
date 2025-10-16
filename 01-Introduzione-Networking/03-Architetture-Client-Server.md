@@ -199,4 +199,4 @@ public class ConnectionPool {
 ## Navigazione del Corso
 - [📑 Torna all'Indice del Corso](../README.md)
 - [⬅️ Guida Precedente](02-Introduzione-ai-Socket.md)
-- [➡️ Esercitazione Successiva](04-Il-protocollo-TCP.md)
+- [➡️ Esercitazione Successiva](04-JavaNetworking.md)

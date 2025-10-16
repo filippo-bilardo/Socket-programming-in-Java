@@ -924,9 +924,9 @@ nc -v localhost 8080
 ## Navigazione del Corso
 - [📑 Torna all'Indice del Corso](../README.md)
 - [⬅️ Guida Precedente](03-Architetture-Client-Server.md)
-- [➡️ Esercitazione Successiva](05-Il-protocollo-UDP.md)
+- [➡️ Guida Successiva](05-Il-protocollo-UDP.md)
 
 ---
 
-*Guida creata per il corso "Socket Programming in Java" - ITCS Cannizzaro"*  
+*Corso "Socket Programming in Java" - ITCS Cannizzaro"*  
 *Versione 1.0 - Ottobre 2025*

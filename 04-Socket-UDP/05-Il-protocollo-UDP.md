@@ -1521,9 +1521,9 @@ byte[] data = new byte[512]; // Safe size
 ## Navigazione del Corso
 - [📑 Torna all'Indice del Corso](../README.md)
 - [⬅️ Guida Precedente](04-Il-protocollo-TCP.md)
-- [➡️ Esercitazione Successiva](../02-Ambiente-Sviluppo/README.md)
+- [➡️ Guida Successiva](06-JavaNetworking.md)
 
 ---
 
-*Guida creata per il corso "Socket Programming in Java" - ITCS Cannizzaro"*  
+*Corso "Socket Programming in Java" - ITCS Cannizzaro"*  
 *Versione 1.0 - Ottobre 2025*
