@@ -13,8 +13,15 @@
  * @version 1.0
  */
 
-import java.io.*;
-import java.net.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.ConnectException;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 
 public class ClientTCPBase {
     private static final String DEFAULT_HOST = "localhost";
@@ -33,9 +40,9 @@ public class ClientTCPBase {
         
         try {
             // Configurazioni pre-connessione
-            socket.setReuseAddress(true);              // Riusa indirizzo se disponibile
-            socket.setTcpNoDelay(true);               // Disabilita algoritmo Nagle per bassa latenza
-            socket.setKeepAlive(true);                // Abilita keep-alive TCP
+            socket.setReuseAddress(true);   // Riusa indirizzo se disponibile
+            socket.setTcpNoDelay(true);     // Disabilita algoritmo Nagle per bassa latenza
+            socket.setKeepAlive(true);      // Abilita keep-alive TCP
             
             // Configura buffer (ottimizzazione performance)
             socket.setReceiveBufferSize(64 * 1024);   // Buffer ricezione 64KB

@@ -85,8 +85,8 @@ try {
 
 ## 🔗 Esempi di Riferimento
 
-- [Esempio 01: Client TCP Base](./esempi/ClientTCPBase.java) - Client TCP con gestione errori
-- [Esempio 02: Server TCP Base](./esempi/ServerTCPBase.java) - Server TCP configurabile
+- [Esempio 01: Client TCP Base](./esempi/es01/ClientTCPBase.java) - Client TCP con gestione errori
+- [Esempio 02: Server TCP Base](./esempi/es01/ServerTCPBase.java) - Server TCP configurabile
 
 ## 💡 Best Practices, Tips & Tricks
 

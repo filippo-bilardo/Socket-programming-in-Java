@@ -10,6 +10,7 @@
 1. [01-Creazione-Socket-TCP](01-Creazione-Socket-TCP.md)
 2. [02-Comunicazione-Dati-TCP](02-Comunicazione-Dati-TCP.md)
 3. [03-Chiusura-Connessioni](03-Chiusura-Connessioni.md)
+4. [04-Il-protocollo-TCP](04-Il-protocollo-TCP.md)
 
 ## 🎯 Esempi Pratici
 
