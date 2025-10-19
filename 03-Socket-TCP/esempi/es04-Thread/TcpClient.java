@@ -1,6 +1,8 @@
 /**
- * from network/..
- * javac network/Client.java; c
+ * TcpClient.java - Esempio di un semplice client TCP che invia messaggi a un server TCP
+ * e riceve risposte echo dal server. 
+ * 
+ * javac TcpClient.java && java TcpClient
  */
 
 import java.io.DataInputStream;

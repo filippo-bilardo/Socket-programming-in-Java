@@ -1,4 +1,13 @@
-
+/**
+ * Class TcpServer che estende Thread per gestire la comunicazione con un client TCP.
+ * Utilizza DataInputStream e DataOutputStream per la comunicazione.
+ * 
+ * Ogni istanza di TcpServer gestisce un singolo client in un thread separato.
+ * Il server riceve messaggi dal client e li rispedisce indietro (echo) fino a quando il client non chiude la connessione.
+ * 
+ * version 1.0 - 18/10/25
+ * author Filippo Bilardo
+ */
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.net.Socket;

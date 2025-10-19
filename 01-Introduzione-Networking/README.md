@@ -10,7 +10,8 @@
 1. [01-Concetti-Fondamentali-Networking](01-Concetti-Fondamentali-Networking.md)
 2. [02-Introduzione-ai-Socket](02-Introduzione-ai-Socket.md)
 3. [03-Architetture-Client-Server](03-Architetture-Client-Server.md)
-4. [04-JavaNetworking](04-JavaNetworking.md)
+4. [04-Altre-Architetture-di-Rete](04-Altre-Architetture-di-Rete.md)
+5. [05-JavaNetworking](05-JavaNetworking.md)
 
 ## 💻 Esempi Pratici
 Tutti gli esempi di codice sono disponibili nella cartella [`/esempi`](./esempi/). Ogni esempio è linkato direttamente dalle guide teoriche.

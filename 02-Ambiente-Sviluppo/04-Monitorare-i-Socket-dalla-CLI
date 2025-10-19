@@ -1,0 +1,710 @@
+# Monitorare i Socket dalla CLI
+
+## Introduzione
+
+Quando sviluppi applicazioni che comunicano via socket, devi essere in grado di diagnosticare problemi di connessione, monitorare le porte aperte, tracciare il traffico e comprendere lo stato del tuo sistema di rete. Questo è il valore della shell: ti permette di ispezionare il sistema operativo a un livello profondo, vedendo esattamente come i tuoi socket stanno interagendo con il sistema. Che tu stia usando Linux/Mac con Bash o Windows con PowerShell, hai accesso a potenti comandi per il troubleshooting della rete. In questa guida, esploreremo gli strumenti più importanti e come usarli per risolvere problemi comuni.
+
+---
+
+## Capitolo 1: Fondamenti - Comprendere la Rete da Riga di Comando
+
+### 1.1 Cosa Sono Davvero i Socket?
+
+Prima di immergerci nei comandi specifici, aiuta comprendere cosa stai effettivamente osservando. Un socket è un'interfaccia di programmazione che rappresenta un endpoint di comunicazione. Quando il tuo programma Java apre un socket verso un server, il sistema operativo crea una struttura dati che rappresenta quella connessione. Questa struttura rimane in memoria finché il socket rimane aperto, e ogni socket consuma risorse del sistema operativo. Da una prospettiva di troubleshooting, ciò significa che puoi ispezionare questi socket dal sistema operativo stesso, indipendentemente dal fatto che il tuo programma Java ti dica cosa sta succedendo.
+
+Quando digiti un comando nella shell, stai eseguendo un programma che chiede al kernel del sistema operativo di darti informazioni sulla rete. Ad esempio, quando chiedi di vedere tutte le connessioni in uscita, il kernel ti fornisce un elenco di tutti i socket attivi attualmente creati da tutti i processi. Questo è straordinariamente utile perché significa che puoi verificare cosa sta effettivamente facendo il tuo programma, indipendentemente da quello che il programma dice che sta facendo.
+
+### 1.2 Gli Stati di un Socket
+
+Prima di monitorare i socket, devi comprendere gli stati principali in cui un socket può trovarsi. Uno stato ESTABLISHED significa che il socket ha completato il three-way handshake TCP (SYN, SYN-ACK, ACK) e sta trasmettendo dati. LISTEN significa che il socket è in attesa di connessioni in arrivo. TIME_WAIT significa che il socket è stato chiuso ma il sistema operativo sta aspettando un po' prima di rilasciare completamente le risorse, per assicurarsi che eventuali pacchetti ritardati non causino confusione. CLOSE_WAIT significa che il socket è in attesa che l'applicazione lo chiuda correttamente. Se vedi molti socket in stato TIME_WAIT, potrebbe significare che le tue connessioni stanno girando molto rapidamente, il che è generalmente bene. Se vedi molti in CLOSE_WAIT, potrebbe significare che il tuo programma non sta chiudendo correttamente i socket.
+
+---
+
+## Capitolo 2: Comandi Bash per Linux e macOS
+
+### 2.1 Netstat - Lo Strumento Classico
+
+Lo strumento più fondamentale per inspezionare i socket è `netstat`, che stampa statistiche di rete del sistema. Sebbene netstat sia tecnicamente deprecato su Linux moderni in favore di `ss`, è comunque ampiamente disponibile e utile comprendere.
+
+Quando digiti `netstat -tuln`, stai dicendo al sistema di mostrarmi tutte le connessioni con le seguenti opzioni: la flag `t` significa mostrami i socket TCP (non UDP), `u` significa include UDP, `l` significa mostra solo i socket in ascolto (listening), e `n` significa mostrami gli indirizzi IP in formato numerico piuttosto che risolvere i nomi di host. La ragione per cui usi il formato numerico è che la risoluzione DNS è lenta e spesso non rilevante quando stai facendo troubleshooting.
+
+```bash
+# Visualizza tutti i socket TCP in ascolto con i loro numeri di porta
+netstat -tuln
+
+# Output come questo:
+# Active Internet connections (only servers)
+# Proto Recv-Q Send-Q Local Address      Foreign Address    State
+# tcp        0      0 0.0.0.0:5000       0.0.0.0:*          LISTEN
+# tcp        0      0 127.0.0.1:3001     0.0.0.0:*          LISTEN
+```
+
+Quello che stai vedendo è una lista di tutte le porte sul tuo sistema che hanno un programma in ascolto. Se il tuo programma Java dovrebbe essere in ascolto sulla porta 5000 ma non lo vedi qui, il tuo programma non è effettivamente in ascolto. Se vedi un'altra applicazione sulla porta 5000, quella applicazione è in conflitto con la tua.
+
+Quando vuoi vedere non solo le porte in ascolto ma tutte le connessioni attive, incluse quelle in uscita verso i server remoti, usi `netstat -tulpn`. La flag `p` mostra il PID (Process ID) del processo che possiede il socket. Questo è cruciale per capire quale processo sta facendo cosa.
+
+```bash
+# Visualizza tutte le connessioni TCP e UDP con i processi che le posseggono
+netstat -tulpn
+
+# Per vedere anche le connessioni in stato ESTABLISHED, non solo LISTEN:
+netstat -tupn
+```
+
+Se vuoi monitorare continuamente come le connessioni cambiano nel tempo, piuttosto che eseguire il comando una sola volta, puoi ripetere il comando ogni pochi secondi usando `watch`:
+
+```bash
+# Aggiorna il display ogni 2 secondi
+watch -n 2 'netstat -tulpn'
+
+# Premi 'q' per uscire
+```
+
+### 2.2 SS - Lo Strumento Moderno
+
+Su sistemi Linux più recenti, il comando `ss` (socket statistics) è preferito a netstat perché è significativamente più veloce e fornisce output più leggibile. Sebbene netstat legge i dati dal file system, `ss` comunica direttamente con il kernel, rendendolo molto più efficiente.
+
+Il modo di usare `ss` è molto simile a netstat, con gli stessi flag principalmente. Quando digiti `ss -tlnp`, stai chiedendo di mostrarmi i socket TCP in ascolto in formato numerico con i processi associati. La differenza principale è che l'output è più leggibile e l'esecuzione è più veloce.
+
+```bash
+# Moderna sostituzione di netstat
+ss -tlnp
+
+# Visualizza tutte le connessioni, non solo quelle in ascolto
+ss -tupn
+
+# Filtra per una porta specifica
+ss -tupn | grep 5000
+
+# Visualizza connessioni a un host specifico
+ss -tupn | grep 127.0.0.1
+```
+
+Un potente utilizzo di `ss` è il filtro, dove puoi chiedere specificamente di vedere solo i socket che soddisfano certi criteri. Ad esempio, se vuoi vedere solo i socket TCP in stato ESTABLISHED che comunicano su determinate porte:
+
+```bash
+# Mostra solo connessioni ESTABLISHED
+ss -tupn state established
+
+# Mostra socket con una specifica porta locale
+ss -tupn "( dport = :5000 or sport = :5000 )"
+
+# Mostra tutte le connessioni TIME_WAIT (utile se sospetti problemi di connessione)
+ss -tupn state time-wait
+```
+
+### 2.3 Lsof - Scoprire Quali Processi Usano Quali Porte
+
+Se vuoi sapere quale processo specifico sta usando una specifica porta, `lsof` (list open files) è lo strumento giusto. Questo comando è particolarmente utile perché ricorda che i socket sono, dal punto di vista del sistema operativo, essenzialmente file, e `lsof` può mostrarvi tutti i file aperti da un processo, inclusi i socket di rete.
+
+```bash
+# Mostra tutte le connessioni di rete aperte
+lsof -i
+
+# Mostra solo connessioni TCP
+lsof -i tcp
+
+# Mostra connessioni su una porta specifica
+lsof -i :5000
+
+# Mostra connessioni di un processo specifico (per PID)
+lsof -i -p 12345
+
+# Mostra connessioni di un programma specifico per nome
+lsof -i -c java
+
+# Mostra file aperti da un processo (non solo socket)
+lsof -p 12345
+```
+
+Quando esegui `lsof -i`, l'output mostra il nome del comando, il PID, l'utente che ha avviato il processo, il tipo di file (IPv4, IPv6), il numero del file descriptor (un numero che il processo usa per fare riferimento al socket), il protocollo, e infine l'indirizzo locale e remoto. Questo ti dà una visione completa di come il processo sta interagendo con la rete.
+
+Un use case particolare è quando hai un servizio che dovrebbe essere in ascolto ma non lo vedi con netstat. Puoi usare `lsof` per scoprire se effettivamente c'è un processo in ascolto o se è il processo sbagliato che ha catturato la porta:
+
+```bash
+# Se la porta 8080 sembra strana, scopri cosa la sta usando
+lsof -i :8080
+```
+
+### 2.4 Netcat (nc) - Testare la Connettività
+
+Netcat è uno strumento straordinario per testare se una porta è raggiungibile. Quando sviluppi un'applicazione server, spesso vuoi verificare che stia effettivamente ascoltando prima di avviare il tuo client per testarla. Netcat può fare sia da server che da client.
+
+Per testare se riesci a connetterti a una porta specifica:
+
+```bash
+# Tenta di connettersi a localhost sulla porta 5000
+nc -zv localhost 5000
+
+# Se la connessione ha successo, vedrai:
+# Connection to localhost 5000 port [tcp/*] succeeded!
+
+# Se fallisce:
+# nc: connect to localhost port 5000 (tcp) failed: Connection refused
+```
+
+La flag `z` significa "scannerizza senza inviare dati" e `v` significa "verbose" (mostra output dettagliato). Questo è utile perché vuoi verificare che la porta sia raggiungibile senza inviare effettivamente dati che potrebbero confondere il tuo server.
+
+Se vuoi testare l'intera rete per scoprire quali porte sono aperte su un host particolare, puoi scansionare un intervallo di porte:
+
+```bash
+# Scannerizza le porte da 5000 a 5010
+nc -zv localhost 5000-5010
+
+# Output:
+# Connection to localhost 5000 port [tcp/*] succeeded!
+# nc: connect to localhost port 5001 (tcp) failed: Connection refused
+# Connection to localhost 5003 port [tcp/*] succeeded!
+```
+
+Netcat è anche straordinariamente utile come server temporaneo per testare. Se hai un client che deve connettersi a un server e vuoi testarlo senza costruire un vero server, puoi avviare netcat in modalità ascolto:
+
+```bash
+# Avvia netcat in ascolto sulla porta 5000
+nc -l 5000
+
+# In un altro terminale, connettiti a netcat
+nc localhost 5000
+
+# Ora puoi digitare messaggi in una finestra e vedranno nell'altra
+# Digita: Ciao
+# Verrà visualizzato nel terminale netcat in ascolto
+```
+
+Questo è straordinariamente utile per verificare che i tuoi programmi stiano effettivamente inviando i dati che pensi stiano inviando.
+
+### 2.5 Tcpdump - Analizzare il Traffico Effettivo
+
+Se i comandi precedenti ti hanno mostrato che una connessione esiste, ma sospetti che i dati non vengano inviati correttamente, il passo successivo è ispezionare il traffico effettivo. `tcpdump` cattura i pacchetti che passano attraverso l'interfaccia di rete e ti permette di vederli.
+
+```bash
+# Cattura tutto il traffico sulla port 5000
+tcpdump -i any -n port 5000
+
+# Cattura e salva in un file per analisi successiva
+tcpdump -i any -n port 5000 -w traffic.pcap
+
+# Leggi il file catturato
+tcpdump -r traffic.pcap
+
+# Cattura e mostra anche il payload dei pacchetti (non solo gli header)
+tcpdump -i any -n port 5000 -A
+```
+
+Quando esegui tcpdump, vedrai output come questo:
+
+```
+21:34:45.123456 IP 127.0.0.1.54321 > 127.0.0.1.5000: Flags [S], seq 1234567890
+21:34:45.123467 IP 127.0.0.1.5000 > 127.0.0.1.54321: Flags [S.], seq 9876543210, ack 1234567891
+21:34:45.123478 IP 127.0.0.1.54321 > 127.0.0.1.5000: Flags [.], ack 9876543211
+```
+
+Questo mostra il three-way handshake TCP. Se non vedi tutti e tre i pacchetti, sai che la connessione non sta completando l'handshake. Se vedi solo il SYN iniziale e nient'altro, significa che il server non sta rispondendo.
+
+La flag `-A` è particolarmente utile perché ti mostra il contenuto effettivo dei pacchetti in formato ASCII, permettendoti di vedere se i dati che pensi stiano being inviati sono effettivamente being inviati:
+
+```bash
+# Cattura ed mostra il payload dei pacchetti
+tcpdump -i any -n port 5000 -A
+
+# Vedrai output come:
+# 21:34:50.123456 IP 127.0.0.1.54321 > 127.0.0.1.5000: Flags [P.], ack 1
+# E[E
+# GET / HTTP/1.1
+# Host: localhost
+```
+
+### 2.6 Strace - Tracciare le Chiamate di Sistema
+
+Se vuoi vedere esattamente quale API socket il tuo programma Java sta usando, il comando `strace` cattura tutte le chiamate di sistema che il programma sta facendo. Una chiamata di sistema è quando il tuo programma chiede al kernel di fare qualcosa, come aprire un socket o leggere da un file descriptor.
+
+```bash
+# Traccia tutte le chiamate di sistema di un programma
+strace -e trace=network java MyProgram
+
+# Traccia e mostra anche gli argomenti passati
+strace -e trace=socket,connect,bind,listen java MyProgram
+
+# Scrivi l'output in un file
+strace -o trace.log java MyProgram
+```
+
+L'output di strace è veramente illuminante. Vedrai qualcosa come:
+
+```
+socket(AF_INET, SOCK_STREAM, IPPROTO_TCP) = 3
+bind(3, {sa_family=AF_INET, sin_port=htons(5000), sin_addr=inet_addr("0.0.0.0")}, 16) = 0
+listen(3, 50) = 0
+accept(3, {sa_family=AF_INET, sin_port=htons(54321), sin_addr=inet_addr("127.0.0.1")}, [16]) = 4
+```
+
+Questo ti mostra esattamente quali socket vengono creati (socket() ritorna il file descriptor 3), come vengono configurate (bind e listen), e quando accettano connessioni (accept ritorna file descriptor 4). Se il tuo programma non sta creando socket come ti aspetti, strace lo rivelerà immediatamente.
+
+---
+
+## Capitolo 3: Comandi PowerShell per Windows
+
+### 3.1 Get-NetTCPConnection - La Sostituzione Windows di Netstat
+
+Su Windows, il comando PowerShell `Get-NetTCPConnection` fornisce informazioni simili a netstat ma in un formato strutturato che è più facile da filtrare e analizzare. Poiché PowerShell è un linguaggio di scripting completo, non stai limitato a quello che il comando stesso restituisce - puoi manipolare i risultati usando pipeline e filtri.
+
+```powershell
+# Mostra tutte le connessioni TCP
+Get-NetTCPConnection | Format-Table -AutoSize
+
+# Mostra solo le connessioni in ascolto sulla port 5000
+Get-NetTCPConnection -LocalPort 5000 -State Listen
+
+# Mostra connessioni ESTABLISHED
+Get-NetTCPConnection -State Established | Format-Table -AutoSize
+```
+
+Quello che è particolarmente utile di PowerShell è che il comando restituisce oggetti con proprietà, non solo testo. Questo significa che puoi filtrare e ordinare in modo molto più intuitivo:
+
+```powershell
+# Mostra tutte le connessioni in ascolto
+Get-NetTCPConnection -State Listen | Select-Object LocalAddress, LocalPort, State
+
+# Ordina per porta
+Get-NetTCPConnection | Sort-Object LocalPort | Format-Table -AutoSize
+
+# Filtra per un intervallo di porte
+Get-NetTCPConnection | Where-Object { $_.LocalPort -gt 5000 -and $_.LocalPort -lt 6000 }
+```
+
+### 3.2 Get-Process per Abbinare Processi alle Connessioni
+
+Su Windows, scoprire quale processo possiede un socket richiede di abbinare il PID dalla connessione con il processo. PowerShell rende questo facile combinando Get-NetTCPConnection con Get-Process:
+
+```powershell
+# Mostra tutte le connessioni con i nomi dei processi
+Get-NetTCPConnection | Select-Object LocalAddress, LocalPort, OwningProcess, State |
+  ForEach-Object { 
+    $process = Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue
+    $_ | Add-Member -NotePropertyName ProcessName -NotePropertyValue $process.Name
+    $_
+  } | Format-Table -AutoSize
+
+# Versione più semplice - mostra solo le porte in ascolto con i processi
+Get-NetTCPConnection -State Listen | 
+  ForEach-Object {
+    $proc = Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue
+    [PSCustomObject]@{
+      Process = $proc.Name
+      Port = $_.LocalPort
+      State = $_.State
+    }
+  } | Format-Table -AutoSize
+```
+
+### 3.3 Test-NetConnection - Testare la Connettività
+
+L'equivalente PowerShell di netcat è `Test-NetConnection`. Questo comando tenta di connettersi a un host e a una porta specifici e ti dice se ha successo.
+
+```powershell
+# Testa se puoi connetterti a localhost sulla porta 5000
+Test-NetConnection -ComputerName localhost -Port 5000
+
+# Esempio di output:
+# ComputerName     : localhost
+# RemoteAddress    : 127.0.0.1
+# RemotePort       : 5000
+# TcpTestSucceeded : True
+
+# Se fallisce:
+# TcpTestSucceeded : False
+```
+
+Puoi testare un intervallo di porte iterando su di esse:
+
+```powershell
+# Testa le porte da 5000 a 5010
+5000..5010 | ForEach-Object {
+  $result = Test-NetConnection -ComputerName localhost -Port $_ -WarningAction SilentlyContinue
+  if ($result.TcpTestSucceeded) {
+    Write-Host "Port $_ : OPEN" -ForegroundColor Green
+  } else {
+    Write-Host "Port $_ : CLOSED" -ForegroundColor Red
+  }
+}
+```
+
+### 3.4 Get-NetStatistics e Get-NetAdapterStatistics
+
+Per monitorare il traffico di rete complessivo su Windows:
+
+```powershell
+# Mostra statistiche di rete dettagliate
+Get-NetStatistics
+
+# Mostra statistiche per adattatore di rete
+Get-NetAdapterStatistics | Format-Table -AutoSize
+
+# Monitora continuamente il traffico ogni 2 secondi
+while ($true) {
+  Clear-Host
+  Get-NetAdapterStatistics | Format-Table -AutoSize
+  Start-Sleep -Seconds 2
+}
+```
+
+### 3.5 Netsh per Configurazione di Rete Avanzata
+
+Anche se non è PowerShell nativo, `netsh` (network shell) è disponibile su Windows e fornisce un grande controllo sulla configurazione di rete e monitoraggio:
+
+```powershell
+# Mostra tutte le connessioni TCP
+netsh netstat an | findstr LISTENING
+
+# Mostra connessioni specifiche
+netsh netstat an | findstr 5000
+
+# Mostra statistiche dettagliate
+netsh int ipv4 show stat
+
+# Mostra informazioni sull'adattatore di rete
+netsh int ip show address
+```
+
+### 3.6 Get-NetTCPConnection con Monitoraggio Continuo
+
+Proprio come `watch` su Linux, puoi creare un loop in PowerShell per monitorare i socket continuamente:
+
+```powershell
+# Monitora le connessioni ogni 2 secondi
+while ($true) {
+  Clear-Host
+  Write-Host "Monitoraggio connessioni TCP..."
+  Write-Host ""
+  Get-NetTCPConnection -State Listen, Established | 
+    Select-Object LocalAddress, LocalPort, RemoteAddress, RemotePort, State |
+    Format-Table -AutoSize
+  Start-Sleep -Seconds 2
+}
+
+# Premi CTRL+C per uscire
+```
+
+---
+
+## Capitolo 4: Scenari Pratici di Troubleshooting
+
+### 4.1 Scenario: Il Mio Server Non Sta in Ascolto
+
+Il primo sintomo è che il tuo programma Java dovrebbe essere in ascolto sulla porta 5000, ma i client non riescono a connettersi. Ecco come diagnosticare:
+
+**Bash:**
+```bash
+# Step 1: Verifica se la porta è effettivamente in ascolto
+netstat -tulnp | grep 5000
+
+# Se non vedi nulla, il programma non sta in ascolto. 
+# Se vedi qualcosa, controlla il PID (il numero all'inizio dell'ultima colonna).
+
+# Step 2: Verifica se il processo è effettivamente in esecuzione
+ps aux | grep java
+
+# Step 3: Se il processo è in esecuzione ma non in ascolto, 
+# usastrace per vedere cosa sta tentando di fare
+strace -e trace=socket,bind,listen java MyProgram
+```
+
+**PowerShell:**
+```powershell
+# Step 1: Verifica se la porta è in ascolto
+Get-NetTCPConnection -LocalPort 5000 -State Listen -ErrorAction SilentlyContinue
+
+# Se non restituisce nulla, la porta non è in ascolto
+
+# Step 2: Verifica se il processo Java è in esecuzione
+Get-Process | Where-Object { $_.Name -like "*java*" }
+
+# Step 3: Testa la connessione
+Test-NetConnection -ComputerName localhost -Port 5000
+```
+
+### 4.2 Scenario: La Porta è Occupata da un Altro Processo
+
+Se provi ad avviare il tuo server ma ricevi "Address already in use", significa che un altro processo sta già usando quella porta.
+
+**Bash:**
+```bash
+# Scopri quale processo sta usando la porta 5000
+lsof -i :5000
+
+# Vedrai il PID e il nome del processo. Se vuoi terminarlo (con cautela!):
+kill -9 <PID>
+
+# Alternativamente, con netstat:
+netstat -tulnp | grep 5000
+```
+
+**PowerShell:**
+```powershell
+# Scopri quale processo sta usando la porta 5000
+Get-NetTCPConnection -LocalPort 5000 | 
+  ForEach-Object {
+    $proc = Get-Process -Id $_.OwningProcess
+    Write-Host "Porta 5000 usata da: $($proc.Name) (PID: $($proc.Id))"
+  }
+
+# Per terminare il processo (con cautela!):
+Get-NetTCPConnection -LocalPort 5000 | 
+  ForEach-Object {
+    Stop-Process -Id $_.OwningProcess -Force
+  }
+```
+
+### 4.3 Scenario: Troppe Connessioni in TIME_WAIT
+
+Se stai creando molte connessioni rapidamente e poi le chiudi, vedrai molti socket in stato TIME_WAIT. Questo è normale, ma se ne vedi troppi, potrebbe significare che il tuo sistema sta esaurendo i socket disponibili.
+
+**Bash:**
+```bash
+# Conta quanti socket sono in TIME_WAIT
+netstat -tulpn | grep TIME_WAIT | wc -l
+
+# Mostra i dettagli di tutti i TIME_WAIT
+ss -tupn state time-wait
+
+# Il valore di TIME_WAIT può essere regolato a livello di kernel:
+# sysctl -a | grep tcp_fin_timeout
+```
+
+**PowerShell:**
+```powershell
+# Conta quanti socket sono in TIME_WAIT
+(Get-NetTCPConnection -State TimeWait | Measure-Object).Count
+
+# Mostra i dettagli
+Get-NetTCPConnection -State TimeWait | Format-Table -AutoSize
+
+# Se il numero è molto alto, potrebbe essere necessario regolare 
+# i parametri di rete di Windows
+```
+
+### 4.4 Scenario: Debuggare la Comunicazione Effettiva
+
+Se il socket è connesso ma i dati non sembrano fluire correttamente, cattura il traffico effettivo.
+
+**Bash:**
+```bash
+# Cattura il traffico sulla porta 5000 e mostra il payload
+tcpdump -i any -n port 5000 -A
+
+# In un altro terminale, esegui il tuo programma client che tenta di connettersi
+# Nel terminale tcpdump vedrai esattamente cosa viene trasmesso
+```
+
+**PowerShell:**
+```powershell
+# Windows non include tcpdump, ma puoi usare NetMon o Wireshark da riga di comando:
+# Se hai Wireshark installato:
+& "C:\Program Files\Wireshark\tshark.exe" -i 1 -f "port 5000" -a duration:30
+
+# Questo cattura per 30 secondi il traffico sulla porta 5000
+```
+
+### 4.5 Scenario: Identificare Perdite di Socket
+
+Se il tuo programma Java sta aprendo socket ma non li sta chiudendo correttamente, vedrai un aumento lento nel numero di socket nel tempo.
+
+**Bash:**
+```bash
+# Esegui questo ogni pochi secondi e osserva il numero di connessioni
+watch -n 5 'netstat -tupn | grep java | wc -l'
+
+# Se il numero aumenta sempre, hai una perdita di socket
+# Usa lsof per vedere quali socket sono aperti:
+lsof -c java | grep TCP | wc -l
+```
+
+**PowerShell:**
+```powershell
+# Monitora il numero di connessioni del processo Java
+$processName = "java"
+while ($true) {
+  $javaProcess = Get-Process | Where-Object { $_.Name -like "*java*" }
+  if ($javaProcess) {
+    $connectionCount = (Get-NetTCPConnection | 
+      Where-Object { $_.OwningProcess -eq $javaProcess.Id }).Count
+    Write-Host "$(Get-Date): $connectionCount connessioni aperte per $processName"
+  }
+  Start-Sleep -Seconds 5
+}
+```
+
+---
+
+## Capitolo 5: Creare Script di Monitoraggio Automatico
+
+### 5.1 Script Bash per Monitorare i Socket
+
+```bash
+#!/bin/bash
+# monitor_sockets.sh - Monitora i socket del programma Java
+
+JAVA_PORT=5000
+CHECK_INTERVAL=5
+ALERT_THRESHOLD=100
+
+echo "Monitoraggio socket sulla porta $JAVA_PORT"
+echo "Intervallo: $CHECK_INTERVAL secondi"
+echo "Soglia di allarme: $ALERT_THRESHOLD socket"
+echo ""
+
+while true; do
+  # Conta le connessioni ESTABLISHED
+  established_count=$(netstat -tupn 2>/dev/null | grep -c "ESTABLISHED")
+  
+  # Conta le connessioni TIME_WAIT
+  timewait_count=$(netstat -tupn 2>/dev/null | grep -c "TIME_WAIT")
+  
+  # Conta le connessioni in ascolto
+  listen_count=$(netstat -tulpn 2>/dev/null | grep -c "LISTEN")
+  
+  # Timestamp
+  timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+  
+  # Stampa
+  echo "[$timestamp] ESTABLISHED: $established_count | TIME_WAIT: $timewait_count | LISTEN: $listen_count"
+  
+  # Allarme se supera la soglia
+  total=$((established_count + timewait_count))
+  if [ $total -gt $ALERT_THRESHOLD ]; then
+    echo "⚠️  ALLARME: Total socket ($total) supera soglia ($ALERT_THRESHOLD)"
+  fi
+  
+  sleep $CHECK_INTERVAL
+done
+```
+
+### 5.2 Script PowerShell per Monitorare i Socket
+
+```powershell
+# Monitor-Sockets.ps1 - Monitora i socket del programma Java
+
+param(
+  [int]$Port = 5000,
+  [int]$CheckInterval = 5,
+  [int]$AlertThreshold = 100
+)
+
+Write-Host "Monitoraggio socket sulla porta $Port"
+Write-Host "Intervallo: $CheckInterval secondi"
+Write-Host "Soglia di allarme: $AlertThreshold socket"
+Write-Host ""
+
+while ($true) {
+  # Conta connessioni per stato
+  $established = (Get-NetTCPConnection -State Established -ErrorAction SilentlyContinue | Measure-Object).Count
+  $timeWait = (Get-NetTCPConnection -State TimeWait -ErrorAction SilentlyContinue | Measure-Object).Count
+  $listen = (Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Measure-Object).Count
+  
+  # Timestamp
+  $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+  
+  # Stampa
+  Write-Host "[$timestamp] ESTABLISHED: $established | TIME_WAIT: $timeWait | LISTEN: $listen"
+  
+  # Allarme se supera la soglia
+  $total = $established + $timeWait
+  if ($total -gt $AlertThreshold) {
+    Write-Host "⚠️  ALLARME: Total socket ($total) supera soglia ($AlertThreshold)" -ForegroundColor Red
+  }
+  
+  Start-Sleep -Seconds $CheckInterval
+}
+```
+
+---
+
+## Capitolo 6: Domande di Autovalutazione
+
+### Domanda 1
+Quale comando su Linux mostra quale processo possiede una connessione sulla porta 5000?
+
+A) netstat -tulnp | grep 5000  
+B) lsof -i :5000  
+C) tcpdump port 5000  
+D) sia A che B  
+
+**Risposta corretta: D**
+
+Sia `netstat -tulnp` che `lsof -i :5000` possono mostrare quale processo possiede la connessione. `lsof` è spesso più facile da usare per una porta specifica, mentre `netstat` è utile per vedere tutte le connessioni.
+
+---
+
+### Domanda 2
+Cosa indica uno stato TIME_WAIT per un socket?
+
+A) Il socket è bloccato e non può ricevere dati  
+B) Il socket è stato chiuso, ma il sistema operativo sta aspettando prima di rilasciare completamente le risorse  
+C) Il socket non è connesso  
+D) Il sistema operativo sta tentando di connettersi  
+
+**Risposta corretta: B**
+
+TIME_WAIT è uno stato normale dopo che un socket è stato chiuso. Il sistema operativo lo mantiene per un po' per assicurarsi che eventuali pacchetti ritardati non causino confusione.
+
+---
+
+### Domanda 3
+Come testeresti se riesci a connetterti a localhost sulla porta 8080 da Bash?
+
+A) nc -zv localhost 8080  
+B) telnet localhost 8080  
+C) netstat localhost 8080  
+D) tanto A che B  
+
+**Risposta corretta: D**
+
+Sia `nc -zv` che `telnet` possono testare la connettività. `nc -zv` è moderno e specificamente progettato per scannerizzare, mentre `telnet` è più vecchio ma comunque funziona.
+
+---
+
+### Domanda 4
+Quale comando PowerShell mostra tutte le connessioni TCP in ascolto?
+
+A) Get-NetTCPConnection -State Listen  
+B) Get-NetTCPConnection -Listen  
+C) netsh netstat an  
+D) Test-NetConnection -Listen  
+
+**Risposta corretta: A**
+
+`Get-NetTCPConnection -State Listen` è il modo corretto di filtrare per lo stato Listen in PowerShell.
+
+---
+
+### Domanda 5
+Se il tuo programma Java stava aprendo socket ma non li stava chiudendo, cosa vedresti nel tempo?
+
+A) Un aumento nel numero di socket ESTABLISHED  
+B) Un aumento nel numero di socket LISTEN  
+C) Un aumento nel numero di socket TIME_WAIT  
+D) Un aumento nel numero di socket CLOSE_WAIT  
+
+**Risposta corretta: D**
+
+Se i socket non vengono chiusi correttamente, rimangono in stato CLOSE_WAIT. TIME_WAIT è solo un stato temporaneo e gli socket in CLOSE_WAIT sono il segnale di una perdita di socket.
+
+---
+
+## Risposte Corrette
+
+| Q | Risposta | Spiegazione |
+|---|----------|-------------|
+| 1 | D | Sia netstat che lsof possono mostrare il processo proprietario |
+| 2 | B | TIME_WAIT è uno stato temporaneo dopo la chiusura del socket |
+| 3 | D | Sia nc che telnet testano la connettività |
+| 4 | A | Get-NetTCPConnection -State Listen è la sintassi corretta |
+| 5 | D | Socket non chiusi rimangono in CLOSE_WAIT, non TIME_WAIT |
+
+---
+
+## Conclusione
+
+La shell, sia Bash che PowerShell, ti fornisce accesso diretto allo stato della rete del tuo sistema. Quando sviluppi applicazioni che communicano via socket, la capacità di ispezionare questo stato direttamente dal sistema operativo è incredibilmente potente. Invece di affidarsi solo ai messaggi di errore dal tuo programma Java, puoi verificare effettivamente cosa sta succedendo a livello di sistema operativo.
+
+I comandi che abbiamo esplorato - netstat, ss, lsof, tcpdump su Bash e Get-NetTCPConnection, Test-NetConnection su PowerShell - sono i tuoi strumenti per risolvere qualsiasi problema di connessione. Impara a usarli fluentemente e il troubleshooting della rete diventerà molto meno misterioso e molto più efficace. La prossima volta che un socket non si comporta come ti aspetti, avrai gli strumenti per scoprire esattamente cosa sta facendo il tuo sistema operativo, e da lì il debugging diventerà molto più facile.

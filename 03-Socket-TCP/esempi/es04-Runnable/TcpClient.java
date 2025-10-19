@@ -1,8 +1,20 @@
-import java.io.*;
-import java.net.*;
+/**  
+ * TCPClient.java - Esempio di un semplice client TCP che invia messaggi a un server TCP
+ * e riceve risposte echo dal server. 
+ *
+ * javac TcpClient.java && java TcpClient
+ *
+ * versione: 1.0 - 18/10/25
+ * autore: Filippo Bilardo
+ */
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.Socket;
 import java.util.Scanner;
 
-public class TCPClient {
+public class TcpClient {
     private static final String HOST = "localhost";
     private static final int PORT = 8080;
     
@@ -19,10 +31,7 @@ public class TCPClient {
             while (true) {
                 System.out.print("Messaggio (o 'quit'): ");
                 userInput = scanner.nextLine();
-                
-                if ("quit".equalsIgnoreCase(userInput)) {
-                    break;
-                }
+                if ("quit".equalsIgnoreCase(userInput)) break;
                 
                 out.println(userInput);           // Invia al server
                 String response = in.readLine();  // Ricevi risposta

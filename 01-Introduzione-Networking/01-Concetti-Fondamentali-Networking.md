@@ -28,6 +28,21 @@ Il **modello TCP/IP** è più pratico e si basa su 4 livelli:
 1. Accesso Rete  - Ethernet, WiFi
 ```
 
+Ecco la tabella in formato markdown che rappresenta il confronto tra il modello OSI e il modello TCP/IP, includendo anche i protocolli e gli esempi di indirizzi:
+
+```markdown
+| Modello OSI            | Protocolli/Esempi                     | Modello TCP/IP       |
+|------------------------|---------------------------------------|----------------------|
+| 7 Applicazione         | DHCP, DNS, FTP, HTTP, HTTPS, POP, SMTP, SSH, DNS, POP3, SNTP, ecc... | Applicazione         |
+| 6 Presentazione        |                                       |                      |
+| 5 Sessione             |                                       |                      |
+| 4 Trasporto            | TCP, UDP                              | Trasporto            |
+| 3 Rete                 | IP Address: IPv4, IPv6                | Internet             |
+| 2 Collegamento         | MAC Address                           | Rete fisica          |
+| 1 Fisico               | Ethernet cable, fibre, wireless, coax, ecc... |                      |
+```
+
+
 ### Indirizzi IP e Porte: Approfondimento Tecnico
 
 #### **Indirizzi IP (Internet Protocol)**

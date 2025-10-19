@@ -11,6 +11,59 @@ Un **Socket** è un **endpoint di comunicazione** che permette a due processi di
 
 **Analogia**: Pensa al socket come a una "presa elettrica" per la rete - fornisce un punto di connessione standardizzato tra due applicazioni.
 
+### Identificazione di un servizio tramite Socket
+Ecco sintetizzato il concetto di **identificazione** di un host e di un servizio mostrato nell’immagine:
+
+```markdown
+| Identificazione Host                     | Identificazione Servizio                     |
+|------------------------------------------|----------------------------------------------|
+| **nome**                                 | **processo**                                 |
+| ↓                                        | ↓                                            |
+| **indirizzo IP**                         | **protocollo**      **porta**                |
+| ↓                                        | ↓                                            |
+| **host**                                 | **servizio**                                 |
+| (globally unique)                        | (specifico dell’host)                        |
+```
+
+Un numero di porta non può essere associato a più processi (server o client) ma un server può offrire più 
+servizi, ciascuno su un’apposita porta.
+
+La socket permette di identificare in modo preciso un servizio su un host in una rete, consentendo alle applicazioni di comunicare tra loro in modo affidabile e ordinato.
+
+### Comunicazione client-server tramite Socket
+
+1. **Socket Client**
+   - Si trova nel processo client.
+   - Viene utilizzato per avviare la connessione verso il server.
+
+2. **Socket di ascolto (Welcome Socket, Listening Socket)**
+   - Si trova nel processo server.
+   - È in ascolto su una porta specifica, pronto a ricevere richieste di connessione dai client.
+
+3. **Socket di Connessione**
+   - Viene creato dal server una volta che il socket di ascolto accetta una richiesta di connessione dal client.
+   - Questo socket gestisce la comunicazione effettiva tra client e server.
+
+Fasi della Comunicazione
+
+1. **Handshaking**
+   - Il client invia una richiesta di connessione al socket di ascolto del server.
+   - Il server accetta la richiesta e crea un socket di connessione dedicato per comunicare con quel client.
+
+2. **Scambio di Dati**
+   - Una volta stabilita la connessione, i byte possono essere scambiati tra il socket client e il socket di connessione del server.
+   - Questo scambio avviene in entrambi i sensi: il client può inviare dati al server e viceversa.
+
+Esempio Pratico
+
+- **Client**: Un browser web che tenta di connettersi a un sito web.
+- **Server**: Un server web che ospita il sito.
+- **Socket di Ascolto**: In ascolto sulla porta 80 (HTTP).
+- **Socket di Connessione**: Creato dal server per gestire la connessione con il browser.
+
+Il browser (client) invia una richiesta di connessione al server sulla porta 80. Il server accetta la richiesta e crea un socket di connessione per gestire la comunicazione con il browser. Ora, il browser e il server possono scambiarsi dati (pagine web, immagini, ecc.).
+
+
 ### Storia e Evoluzione dei Socket
 
 I socket furono introdotti per la prima volta nel 1983 con **Berkeley Software Distribution (BSD) 4.2**. L'API Berkeley Sockets è diventata lo standard de facto per la programmazione di rete e influenza ancora oggi le implementazioni moderne.

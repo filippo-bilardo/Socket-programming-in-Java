@@ -1,9 +1,16 @@
 /**
- * javac network/TheadedServer.java; java network.TheadedServer 
+ * Multithreaded TCP Server che accetta connessioni da più client
+ * e gestisce ciascuno in un thread separato utilizzando la classe TcpServer.
+ * 
+ * 
+ * javac MultithreadedTcpServer.java TcpServer.java; 
+ * java MultithreadedTcpServer 
+ * 
+ * version 1.0 - 18/10/25
+ * author Filippo Bilardo
  */
 import java.net.ServerSocket;
 import java.net.Socket;
-
 
 public class MultithreadedTcpServer {
 
@@ -25,9 +32,9 @@ public class MultithreadedTcpServer {
 
 			System.out.println("Serving Client " + count);
 			// Handle the client communication
-			//TcpServer sa = new TcpServer(serverClientSocket, count);
-			//sa.start();
-			//sa.setName("Questo-e-il-mio-ServerThread-Numero-" +count);  
+			TcpServer sa = new TcpServer(serverClientSocket, count);
+			sa.start();
+			sa.setName("Questo-e-il-mio-ServerThread-Numero-" +count);  
 		}
 		
 		server.close();
