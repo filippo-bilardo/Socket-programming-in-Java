@@ -10,17 +10,23 @@
  * 3. Legge il messaggio e lo invia indietro (echo)
  * 4. Chiude la connessione e passa al client successivo
  * 
+ * javac ServerIterativo.java && java ServerIterativo
+ * 
  * @author Socket Programming Course
  * @version 1.0
  */
 
-import java.io.*;
-import java.net.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 public class ServerIterativo {
-    private static final int PORT = 8080;
+    private static final int PORT = 8840;
     private static final String EXIT_COMMAND = "quit";
     
     /**

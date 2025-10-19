@@ -10,17 +10,24 @@
  * 3. Mostra le risposte del server
  * 4. Gestisce la disconnessione graceful
  * 
+ * javac ClientBase.java && java ClientBase [host] [porta]
+ * 
  * @author Socket Programming Course
  * @version 1.0
  */
 
-import java.io.*;
-import java.net.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.ConnectException;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.Scanner;
 
 public class ClientBase {
     private static final String DEFAULT_HOST = "localhost";
-    private static final int DEFAULT_PORT = 8080;
+    private static final int DEFAULT_PORT = 8840;
     private static final String EXIT_COMMAND = "quit";
     
     /**

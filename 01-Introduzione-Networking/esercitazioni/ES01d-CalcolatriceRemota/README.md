@@ -33,7 +33,7 @@ Al termine di questa esercitazione lo studente sarà in grado di:
 ### Conoscenze Teoriche Richieste:
 - 🔌 **Socket TCP/IP:** Concetti base di client-server
 - ☕ **Java I/O:** `BufferedReader`, `PrintWriter`, `Socket`, `ServerSocket`
-- 🔄 **Exception Handling:** `try-catch-finally`, resource management
+- 🔄 **Exception Handling:** `try-catch-finally`, resource management oppure `try-with-resources`
 - 📝 **String manipulation:** Parsing e manipolazione stringhe
 
 ### Strumenti Necessari:
@@ -50,7 +50,7 @@ Al termine di questa esercitazione lo studente sarà in grado di:
 Realizzare un'applicazione client-server dove:
 
 1. **Il SERVER:**
-   - Ascolta sulla porta `8080`
+   - Ascolta sulla porta `8844`
    - Riceve operazioni matematiche dal client nel formato: `NUMERO1 OPERAZIONE NUMERO2`
    - Esegue il calcolo richiesto (+, -, *, /)
    - Restituisce il risultato al client
@@ -59,7 +59,7 @@ Realizzare un'applicazione client-server dove:
    - Si chiude quando riceve il comando "QUIT"
 
 2. **Il CLIENT:**
-   - Si connette al server localhost:8080
+   - Si connette al server localhost:8844
    - Presenta un menu interattivo all'utente
    - Invia le richieste di calcolo al server
    - Mostra i risultati ricevuti
@@ -107,7 +107,7 @@ Server response: "CHIUSURA: Operazioni eseguite: 4. Arrivederci!"
 ```
 ┌─────────────┐    TCP Socket    ┌─────────────┐
 │   CLIENT    │◄────────────────►│   SERVER    │
-│             │   porta 8080     │             │
+│             │   porta 8844     │             │
 │ - Input UI  │                  │ - Calcoli   │
 │ - Validaz.  │                  │ - Contatori │
 │ - Display   │                  │ - Gestione  │
@@ -127,7 +127,7 @@ import java.io.*;
 import java.net.*;
 
 public class CalcolatriceServer {
-    private static final int PORTA = 8080;
+    private static final int PORTA = 8844;
     
     public static void main(String[] args) {
         // TODO: Implementa qui il server

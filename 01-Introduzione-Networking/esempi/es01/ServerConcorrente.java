@@ -10,19 +10,28 @@
  * 3. Ogni thread gestisce un client indipendentemente
  * 4. Usa ExecutorService per limitare il numero di thread
  * 
+ * javac ServerConcorrente.java && java ServerConcorrente
+ * 
  * @author Socket Programming Course
  * @version 1.0
  */
 
-import java.io.*;
-import java.net.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ServerConcorrente {
-    private static final int PORT = 8081;
+    private static final int PORT = 8841;
     private static final int MAX_THREADS = 10;
     private static final String EXIT_COMMAND = "quit";
     
