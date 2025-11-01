@@ -2,7 +2,8 @@
  * Esempio di un semplice server TCP che riceve un messaggio da un client,
  * lo elabora e restituisce una risposta con il messaggio in maiuscolo.
  *
- * javac TcpServer.java && java TcpServer
+ * Compilo ed eseguo il server in background:
+ * javac TcpServer.java && java TcpServer &
  */
 import java.io.BufferedReader;
 import java.io.IOException;

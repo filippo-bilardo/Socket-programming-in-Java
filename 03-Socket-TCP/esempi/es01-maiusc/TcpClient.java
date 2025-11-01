@@ -2,6 +2,7 @@
  * Esempio di un semplice client TCP che si connette a un server,
  * invia un messaggio, e riceve una risposta.
  * 
+ * Compilo ed eseguo il client:
  * javac TcpClient.java && java TcpClient
  */
 import java.io.BufferedReader;
