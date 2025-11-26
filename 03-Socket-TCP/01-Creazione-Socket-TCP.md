@@ -39,6 +39,7 @@ La classe `ServerSocket` gestisce l'ascolto e l'accettazione di connessioni:
 // Costruttori
 ServerSocket serverSocket = new ServerSocket(8080);           // Porta specifica
 ServerSocket serverSocket = new ServerSocket(8080, 50);      // Con backlog
+// Il backlog è il numero massimo di connessioni in attesa, altre connessioni verranno rifiutate
 ServerSocket serverSocket = new ServerSocket(8080, 50, 
     InetAddress.getByName("192.168.1.100"));                // IP specifico
 ```

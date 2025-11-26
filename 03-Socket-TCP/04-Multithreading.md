@@ -213,3 +213,9 @@ Il multithreading nei socket è essenziale per costruire server scalabili e resp
 4. **Implementare timeout e graceful shutdown** per robustezza
 5. **Testare** con carichi elevati per verificare la scalabilità
 
+---
+
+## Navigazione del Corso
+- [📑 Torna all'Indice del Corso](../README.md)
+- [⬅️ Guida Precedente](03-Chiusura-Connessioni.md)
+- [➡️ Esercitazione Successiva](../04-Socket-UDP-Fondamenti/README.md)

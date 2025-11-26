@@ -22,6 +22,7 @@ BufferedOutputStream bufferedOut = new BufferedOutputStream(out);
 BufferedReader reader = new BufferedReader(new InputStreamReader(in));
 PrintWriter writer = new PrintWriter(out, true); // auto-flush
 ```
+![immagine](img_02_stream.png)
 
 ### Invio e Ricezione Messaggi
 
