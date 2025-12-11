@@ -1,3 +1,61 @@
+<?php
+// Configurazione
+define('SERVER_HOST', 'localhost');
+define('SERVER_PORT', 5555);
+
+// Variabile per contenere il risultato HTML
+$risultato_html = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['messaggio'])) {
+    $messaggio = trim($_POST['messaggio']);
+    
+    try {
+        // Crea socket
+        $socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
+        if ($socket === false) {
+            throw new Exception("Errore creazione socket: " . socket_strerror(socket_last_error()));
+        }
+        
+       
+        // Connetti al server
+        $result = socket_connect($socket, SERVER_HOST, SERVER_PORT);
+        if ($result === false) {
+            throw new Exception("Errore connessione al server: " . socket_strerror(socket_last_error($socket)));
+        }
+        
+        // Invia messaggio
+        $messaggio_con_newline = $messaggio . "\n";
+        $bytes_sent = socket_write($socket, $messaggio_con_newline, strlen($messaggio_con_newline));
+        if ($bytes_sent === false) {
+            throw new Exception("Errore invio messaggio: " . socket_strerror(socket_last_error($socket)));
+        }
+        
+        // Ricevi risposta
+        $risposta = socket_read($socket, 1024, PHP_NORMAL_READ);
+        if ($risposta === false) {
+            throw new Exception("Errore ricezione risposta: " . socket_strerror(socket_last_error($socket)));
+        }
+        
+        // Chiudi socket
+        socket_close($socket);
+        
+        // Prepara risultato HTML
+        $risultato_html = '<div class="result success">';
+        $risultato_html .= '<h3>✅ Comunicazione Riuscita</h3>';
+        $risultato_html .= '<p><strong>Messaggio inviato:</strong> ' . htmlspecialchars($messaggio) . '</p>';
+        $risultato_html .= '<p><strong>Risposta dal server:</strong> ' . htmlspecialchars(trim($risposta)) . '</p>';
+        $risultato_html .= '<p><strong>Byte inviati:</strong> ' . $bytes_sent . '</p>';
+        $risultato_html .= '</div>';
+        
+    } catch (Exception $e) {
+        $risultato_html = '<div class="result error">';
+        $risultato_html .= '<h3>❌ Errore di Comunicazione</h3>';
+        $risultato_html .= '<p>' . htmlspecialchars($e->getMessage()) . '</p>';
+        $risultato_html .= '<p><strong>Suggerimento:</strong> Verifica che il server Java sia avviato sulla porta 5555</p>';
+        $risultato_html .= '</div>';
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -162,64 +220,7 @@
             <button type="submit">📤 Invia Messaggio</button>
         </form>
         
-        <?php
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['messaggio'])) {
-            $messaggio = trim($_POST['messaggio']);
-            
-            // Configurazione
-            define('SERVER_HOST', 'localhost');
-            define('SERVER_PORT', 5555);
-            
-            try {
-                // Crea socket
-                $socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
-                if ($socket === false) {
-                    throw new Exception("Errore creazione socket: " . socket_strerror(socket_last_error()));
-                }
-                
-                // Imposta timeout
-                socket_set_option($socket, SOL_SOCKET, SO_RCVTIMEO, array('sec' => 5, 'usec' => 0));
-                socket_set_option($socket, SOL_SOCKET, SO_SNDTIMEO, array('sec' => 5, 'usec' => 0));
-                
-                // Connetti al server
-                $result = socket_connect($socket, SERVER_HOST, SERVER_PORT);
-                if ($result === false) {
-                    throw new Exception("Errore connessione al server: " . socket_strerror(socket_last_error($socket)));
-                }
-                
-                // Invia messaggio
-                $messaggio_con_newline = $messaggio . "\n";
-                $bytes_sent = socket_write($socket, $messaggio_con_newline, strlen($messaggio_con_newline));
-                if ($bytes_sent === false) {
-                    throw new Exception("Errore invio messaggio: " . socket_strerror(socket_last_error($socket)));
-                }
-                
-                // Ricevi risposta
-                $risposta = socket_read($socket, 1024, PHP_NORMAL_READ);
-                if ($risposta === false) {
-                    throw new Exception("Errore ricezione risposta: " . socket_strerror(socket_last_error($socket)));
-                }
-                
-                // Chiudi socket
-                socket_close($socket);
-                
-                // Mostra risultato
-                echo '<div class="result success">';
-                echo '<h3>✅ Comunicazione Riuscita</h3>';
-                echo '<p><strong>Messaggio inviato:</strong> ' . htmlspecialchars($messaggio) . '</p>';
-                echo '<p><strong>Risposta dal server:</strong> ' . htmlspecialchars(trim($risposta)) . '</p>';
-                echo '<p><strong>Byte inviati:</strong> ' . $bytes_sent . '</p>';
-                echo '</div>';
-                
-            } catch (Exception $e) {
-                echo '<div class="result error">';
-                echo '<h3>❌ Errore di Comunicazione</h3>';
-                echo '<p>' . htmlspecialchars($e->getMessage()) . '</p>';
-                echo '<p><strong>Suggerimento:</strong> Verifica che il server Java sia avviato sulla porta 5555</p>';
-                echo '</div>';
-            }
-        }
-        ?>
+        <?= $risultato_html; ?>
     </div>
 </body>
 </html>
