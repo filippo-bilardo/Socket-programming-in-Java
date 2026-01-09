@@ -39,7 +39,41 @@ Al termine di questa esercitazione lo studente sarà in grado di:
 - 💻 IDE o editor di testo (VS Code, IntelliJ, Eclipse)
 - 🖥️ Terminale per compilazione ed esecuzione
 
-## 📖 TRACCIA DELL'ESERCIZIO- Applicazione: "Daytime Server UDP con Sistema Bonus"
+## 📦 MODALITÀ DI CONSEGNA
+
+> **⚠️ IMPORTANTE:** Seguire attentamente le modalità di consegna per ogni step!
+
+### 📌 Consegna del Codice:
+
+- ✅ Crea un repository **GitHub** per l'esercitazione
+- ✅ Carica i file sorgente (`.java`) su GitHub
+- ✅ Nella relazione, inserisci il **link del repository** (non copiare/incollare il codice)
+- ✅ Assicurati che il repository contenga:
+  - Codice sorgente di ogni step
+  - README.md con istruzioni di compilazione ed esecuzione
+  - File `.gitignore` per escludere file compilati (`.class`)
+
+### 📸 Documentazione dei Test:
+
+- ✅ Per ogni step, esegui i test richiesti
+- ✅ Cattura **screenshot** che dimostrano:
+  - Output del server (log, messaggi, contatori)
+  - Output del client (richieste, risposte)
+  - File creati (quando richiesto)
+- ✅ Nomina gli screenshot in modo descrittivo: `stepN_descrizione.png`
+- ✅ Organizza gli screenshot in una cartella `screenshots/` nel repository o nella relazione
+
+### 📝 Struttura della Relazione:
+
+La relazione deve contenere:
+1. **Introduzione** - Obiettivi e tecnologie utilizzate
+2. **Per ogni STEP:**
+   - 📌 Link del repository GitHub con il codice
+   - 📸 Screenshot dei test eseguiti
+   - 💬 Breve spiegazione delle scelte implementative
+3. **Conclusioni** - Difficoltà incontrate e soluzioni adottate
+
+##  TRACCIA DELL'ESERCIZIO- Applicazione: "Daytime Server UDP con Sistema Bonus"
 Realizzare un'applicazione client-server dove:
 
 ### 1. Il SERVER:
