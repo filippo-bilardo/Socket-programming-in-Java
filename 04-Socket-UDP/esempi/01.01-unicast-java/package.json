@@ -1,0 +1,12 @@
+{
+  "name": "udp-unicast-examples",
+  "version": "1.0.0",
+  "description": "Esempi base di comunicazione UDP unicast in JavaScript/Node.js",
+  "scripts": {
+    "sender": "node udp-sender.js",
+    "receiver": "node udp-receiver.js"
+  },
+  "keywords": ["udp", "unicast", "socket", "networking", "datagram"],
+  "author": "Filippo Bilardo",
+  "license": "ISC"
+}

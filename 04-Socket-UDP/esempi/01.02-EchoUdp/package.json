@@ -1,0 +1,14 @@
+{
+  "name": "echo-udp",
+  "version": "1.0.0",
+  "description": "Echo UDP Server e Client - Dimostrazione comunicazione UDP bidirezionale",
+  "main": "echo-udp.js",
+  "scripts": {
+    "server": "node echo-udp.js server 9999",
+    "client": "node echo-udp.js client localhost 9999",
+    "help": "node echo-udp.js"
+  },
+  "keywords": ["udp", "echo", "socket", "networking", "datagram"],
+  "author": "Socket Programming Course",
+  "license": "ISC"
+}

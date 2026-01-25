@@ -1,0 +1,13 @@
+{
+  "name": "multicast-receiver",
+  "version": "1.0.0",
+  "description": "Esempio di ricezione pacchetti multicast UDP con Node.js",
+  "main": "multicast-receiver.js",
+  "scripts": {
+    "start": "node multicast-receiver.js",
+    "dev": "node multicast-receiver.js 239.255.0.1 5000"
+  },
+  "keywords": ["udp", "multicast", "socket", "networking"],
+  "author": "",
+  "license": "ISC"
+}

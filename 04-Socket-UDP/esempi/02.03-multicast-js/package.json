@@ -1,0 +1,13 @@
+{
+  "name": "multicast-sender",
+  "version": "1.0.0",
+  "description": "Esempio di invio pacchetti multicast UDP con Node.js",
+  "main": "multicast-sender.js",
+  "scripts": {
+    "start": "node multicast-sender.js",
+    "dev": "node multicast-sender.js 239.255.0.1 5000 2000 1"
+  },
+  "keywords": ["udp", "multicast", "socket", "networking"],
+  "author": "",
+  "license": "ISC"
+}
