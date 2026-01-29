@@ -1,0 +1,23 @@
+{
+  "name": "multicast-base-js",
+  "version": "1.0.0",
+  "description": "Esempio base di comunicazione UDP multicast in JavaScript/Node.js",
+  "main": "sender.js",
+  "scripts": {
+    "sender": "node sender.js",
+    "receiver": "node receiver.js",
+    "test": "echo 'Avvia il receiver in un terminale, poi il sender in un altro'"
+  },
+  "keywords": [
+    "udp",
+    "multicast",
+    "networking",
+    "dgram",
+    "socket"
+  ],
+  "author": "Filippo Bilardo",
+  "license": "ISC",
+  "engines": {
+    "node": ">=12.0.0"
+  }
+}

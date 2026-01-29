@@ -1,0 +1,19 @@
+------- Test Multicast UDP in Java -------
+RECEIVER: Gruppo multicast: 230.0.0.1:19876
+RECEIVER: Socket bound to: /[0:0:0:0:0:0:0:0]:19876
+RECEIVER: Receiver in ascolto. Ctrl+C per terminare.
+RECEIVER: In attesa di messaggi...
+SENDER: Messaggio inviato: messaggio 1
+RECEIVER: Messaggio ricevuto: messaggio 1
+RECEIVER: Da: /10.0.0.141:39489
+RECEIVER: In attesa di messaggi...
+SENDER: Messaggio inviato: messaggio 2
+RECEIVER: Messaggio ricevuto: messaggio 2
+RECEIVER: Da: /10.0.0.141:39489
+RECEIVER: In attesa di messaggi...
+SENDER: Messaggio inviato: bye
+RECEIVER: Messaggio ricevuto: bye
+RECEIVER: Da: /10.0.0.141:39489
+RECEIVER: Abbandonato il gruppo multicast. Termino il receiver.
+SENDER: Tutti i messaggi sono stati inviati al gruppo di multicast.
+------- Fine Test -------

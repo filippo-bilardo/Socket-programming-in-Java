@@ -1525,5 +1525,5 @@ byte[] data = new byte[512]; // Safe size
 
 ---
 
-*Corso "Socket Programming in Java" - ITCS Cannizzaro"*  
+*Corso "Socket Programming in Java" - ITIS Cannizzaro"*  
 *Versione 1.0 - Ottobre 2025*

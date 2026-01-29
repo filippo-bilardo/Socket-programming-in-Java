@@ -14,22 +14,18 @@
  * 
  * Prendere spunto da ES04-01-UDPSenderReceiver, ES04-02-UDOEchoServer e ES04-03-UDPMulticast 
  */
-import java.net.DatagramPacket;
-import java.net.InetAddress;
-import java.net.MulticastSocket;
 import java.util.Scanner;
 
 public class MulticastChat {
 
-    private static final String LOCAL_IP = "127.0.0.1";
-    private static final String MULTICAST_IP = "230.0.0.1";
-    private static final int MULTICAST_PORT = 8888;
+    private static final String MULTICAST_IP = "239.0.0.1";
+    private static final int MULTICAST_PORT = 5000;
 
     public static void main(String[] args) {
         try {
             // Creazione del gruppo multicast
             // Creazione della socket per la comunicazione multicast
-            // Associazione della socket all'interfaccia di rete
+            // (OPZIONALE) Associazione della socket all'interfaccia di rete
             // Associazione della socket al gruppo multicast
 
             // Thread per la ricezione dei messaggi multicast
@@ -42,7 +38,7 @@ public class MulticastChat {
 
                             // Ricezione del pacchetto
                             
-                            //Stampo a schermo info e dati ricevuti
+                            // Stampo a schermo info e dati ricevuti
 
                             // Se il messaggio è "exit" termina il programma
                         }
@@ -59,8 +55,9 @@ public class MulticastChat {
                 public void run() {
                     try {
                         Scanner scanner = new Scanner(System.in);
-                        while (true) {
-                            String msg = scanner.nextLine();
+                        String msg = "";
+                        while (msg.equals("exit") == false) {
+                            msg = scanner.nextLine();
                             // Creazione del pacchetto per l'invio dei dati
 
                             // Invio del pacchetto
