@@ -14,7 +14,7 @@ import java.net.MulticastSocket;
 
 public class BaseReceiver {
 
-    private static final String MULTICAST_IP = "230.0.0.1";
+    private static final String MULTICAST_IP = "239.255.0.1";
     private static final int MULTICAST_PORT = 19876;
 
     public static void main(String[] args) {

@@ -1,5 +1,9 @@
-import java.net.*;
-import java.io.*;
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.InetAddress;
+import java.net.MulticastSocket;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 
 /**
  * Esempio 02.03 - Multicast UDP Sender (Java)
@@ -14,9 +18,16 @@ import java.io.*;
  * - Configurazione TTL (Time To Live)
  * - MulticastSocket per la gestione del multicast
  * 
+
+
+javac MulticastSender.java MulticastReceiver.java
+java MulticastReceiver & 
+java MulticastSender
+
+
  * Compilazione: javac MulticastSender.java
  * Esecuzione: java MulticastSender [indirizzo_multicast] [porta] [intervallo_ms] [ttl]
- * Esempio: java MulticastSender 239.255.0.1 5000 2000 1
+ * Esempio: java MulticastSender 239.255.0.1 19876 2000 1
  */
 public class MulticastSender {
     private static final String DEFAULT_MULTICAST_ADDRESS = "239.255.0.1";
