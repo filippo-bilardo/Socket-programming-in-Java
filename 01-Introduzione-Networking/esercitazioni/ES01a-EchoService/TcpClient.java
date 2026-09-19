@@ -1,7 +1,8 @@
 /**
  * Semplice TCP Client in Java
  * 
- * javac TcpClient.java $$ java TcpClient 
+ * javac TcpClient.java && java TcpClient 
+ * 
  * author: Filippo Bilardo
  * version: 1.1 - 18/10/25 
  */
@@ -19,7 +20,7 @@ public class TcpClient {
 		String severAddress="127.0.0.1";  // localhost
 		int severPort=8765;
 		String clientMsg = "";
-		String serverMsg = "";
+		String serverMsg;
 		
 		try {
 			// Create connection to server socket

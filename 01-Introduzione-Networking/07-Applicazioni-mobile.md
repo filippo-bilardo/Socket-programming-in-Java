@@ -910,3 +910,11 @@ Le applicazioni mobili rappresentano il futuro della computing, ma hanno vincoli
 La comunicazione efficiente con i server backend è fondamentale. Preferisci HTTP/REST alle socket TCP, raggruppa le richieste, implementa caching e sincronizzazione intelligente, e comprendi come la rete mobile differisce dalla rete fissa.
 
 Che tu scelga di sviluppare nativamente con Android SDK, o di usare framework cross-platform come React Native o Flutter, i principi rimangono gli stessi: costruisci app che funzionano offline, che sincronizzano intelligentemente, che rispettano la batteria dell'utente, e che comunicano in modo efficiente con i tuoi server backend.
+
+---
+
+## Navigazione del Corso
+- [📑 Torna all'Indice del Corso](../README.md)
+- [⬅️ Guida Precedente](06-JavaNetworking.md)
+- [➡️ Guida Successiva](../02-Ambiente-Sviluppo/README.md)
+

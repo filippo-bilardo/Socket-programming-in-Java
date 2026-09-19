@@ -172,6 +172,8 @@ sequenceDiagram
 - **Esercizio 2 (Intermedio)**: Analizza il traffico di rete della tua applicazione web preferita e identifica i protocolli utilizzati.
 - **Esercizio 3 (Avanzato)**: Progetta un protocollo ibrido che utilizzi sia TCP che UDP per un'applicazione di videoconferenza.
 
+---
+
 ## Navigazione del Corso
 - [📑 Torna all'Indice del Corso](../README.md)
 - [➡️ Guida Successiva](02-Introduzione-ai-Socket.md)

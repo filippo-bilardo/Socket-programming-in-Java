@@ -210,6 +210,8 @@ Java fornisce un'API ad alto livello che semplifica l'uso dei socket:
 - **Esercizio 2 (Intermedio)**: Crea un'applicazione che mostra tutte le informazioni disponibili su un socket.
 - **Esercizio 3 (Avanzato)**: Implementa un semplice port scanner che testa la connettività su un range di porte.
 
+---
+
 ## Navigazione del Corso
 - [📑 Torna all'Indice del Corso](../README.md)
 - [⬅️ Guida Precedente](01-Concetti-Fondamentali-Networking.md)

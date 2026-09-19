@@ -285,8 +285,8 @@ System.out.println("Java: il linguaggio di networking cross-platform per eccelle
 
 ## Navigazione del Corso
 - [📑 Torna all'Indice del Corso](../README.md)
-- [⬅️ Guida Precedente](03-Architetture-Client-Server.md)
-- [➡️ Esercitazione Successiva](../02-Ambiente-Sviluppo/README.md)
+- [⬅️ Guida Precedente](05-Tipologie-di-Applicazioni.md)
+- [➡️ Guida Successiva](../02-Ambiente-Sviluppo/README.md)
 
 ---
 

@@ -196,7 +196,9 @@ public class ConnectionPool {
 - **Esercizio 2 (Intermedio)**: Crea un server concorrente che mantiene una lista di client connessi.
 - **Esercizio 3 (Avanzato)**: Sviluppa un sistema di chat multi-utente con rooms separate.
 
+---
+
 ## Navigazione del Corso
 - [📑 Torna all'Indice del Corso](../README.md)
 - [⬅️ Guida Precedente](02-Introduzione-ai-Socket.md)
-- [➡️ Esercitazione Successiva](04-JavaNetworking.md)
+- [➡️ Guida Successiva](04-Altre-Architetture-di-Rete.md)

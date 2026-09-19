@@ -1,7 +1,7 @@
 /**
  * Semplice TCP Server in Java
  *
- * javac TcpServer.java $$ java TcpServer
+ * javac TcpServer.java && java TcpServer
  * 
  * author: Filippo Bilardo
  * version: 1.1 - 18/10/25 

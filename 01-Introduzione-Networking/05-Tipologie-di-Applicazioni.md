@@ -1389,3 +1389,10 @@ Inizia monolitico, scala quando necessario. La complessità deve essere guadagna
 - **Service Mesh:** Istio, Linkerd
 - **Monitoring:** Prometheus, Grafana, Jaeger
 - **Logging:** ELK Stack (Elasticsearch, Logstash, Kibana)
+
+---
+
+## Navigazione del Corso
+- [📑 Torna all'Indice del Corso](../README.md)
+- [⬅️ Guida Precedente](04-Altre-Architetture-di-Rete.md)
+- [➡️ Guida Successiva](06-JavaNetworking.md)

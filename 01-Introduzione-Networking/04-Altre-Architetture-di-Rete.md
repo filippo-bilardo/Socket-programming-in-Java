@@ -84,13 +84,13 @@ Client → Chiede aggiornamenti → Server
 │ Peer A  │────→│ Peer B  │
 │ (S+C)   │←────│ (S+C)   │
 └─────────┘     └─────────┘
-     ↓               ↑
-     └───────┬───────┘
-           ↓
-     ┌─────────┐
-     │ Peer C  │
-     │ (S+C)   │
-     └─────────┘
+     ↓              ↑
+     └──────┬───────┘
+            ↓
+       ┌─────────┐
+       │ Peer C  │
+       │ (S+C)   │
+       └─────────┘
 ```
 
 Ogni nodo è **contemporaneamente server e client**.
@@ -788,3 +788,10 @@ La scelta dipende dai requisiti:
 - **Replicazione** → Master-Slave
 
 Non esiste una "migliore": ogni architettura ha il suo caso d'uso ideale.
+
+---
+
+## Navigazione del Corso
+- [📑 Torna all'Indice del Corso](../README.md)
+- [⬅️ Guida Precedente](03-Architetture-Client-Server.md)
+- [➡️ Guida Successiva](05-Tipologie-di-Applicazioni.md)
