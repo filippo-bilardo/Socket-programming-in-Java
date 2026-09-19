@@ -2,7 +2,7 @@
  * Lettura dati multi riga provenienti dal client
  * 
  * cd /home/git-projects/TPSIT_3/B-ES01-03-HelloServer
- * javac TcpServer.java && java TcpServer
+ * javac TcpHelloServer.java && java TcpHelloServer
  * 
  * (c) Filippo Bilardo
  * versione 1.1 - 19/09/26 - piccole modifiche e aggiunta commenti
