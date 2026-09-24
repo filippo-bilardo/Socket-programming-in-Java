@@ -6,6 +6,9 @@
  *  
  * javac TcpServer.java
  * java TcpServer
+ * 
+ * (c) Filippo Bilardo
+ * version: 1.1 - 18/10/25 - aggiunta commenti
  */
 
 import java.io.BufferedReader;
