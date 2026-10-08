@@ -13,8 +13,9 @@ server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 # 2. Associazione del socket a un indirizzo e porta (binding)
 # 'localhost' significa che il server ascolterà solo su questa macchina
+# '0.0.0.0' significa che il server ascolterà su tutte le interfacce di rete disponibili
 # 12345 è la porta su cui il server sarà disponibile
-server_socket.bind(('localhost', 12345))
+server_socket.bind(('0.0.0.0', 12345))
 
 # 3. Il server inizia ad ascoltare le connessioni in entrata
 # Il parametro 5 indica il numero massimo di connessioni in coda

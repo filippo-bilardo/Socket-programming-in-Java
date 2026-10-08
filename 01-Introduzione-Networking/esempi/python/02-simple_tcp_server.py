@@ -1,5 +1,8 @@
 # Esempio 02: Server TCP essenziale che stampa le richieste HTTP
 # Apri http://localhost:8765 oppure esegui: curl http://localhost:8765
+# da un host remoto esegui: curl http://w4s.filippobilardo.it:8765
+# puoi anche usare un browser che supporti il protocollo HTTP
+#   per aprire http://w4s.filippobilardo.it:8765
 # Per semplicità legge un solo blocco: la richiesta potrebbe essere incompleta.
 # (c) Filippo Bilardo
 
@@ -8,7 +11,7 @@ import socket
 # 1. Creazione del socket e ascolto sulla porta 8765.
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    server_socket.bind(('localhost', 8765))
+    server_socket.bind(('0.0.0.0', 8765))
     server_socket.listen(5)
     print("Server in ascolto su http://localhost:8765", flush=True)
 

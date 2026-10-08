@@ -46,7 +46,7 @@ def ricevi_richiesta(client_socket):
 # I blocchi with chiudono automaticamente i socket all'uscita.
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    server_socket.bind(('localhost', 8765))
+    server_socket.bind(('0.0.0.0', 8765))
     server_socket.listen(5)
     print("Server HTTP in ascolto su http://localhost:8765 (Ctrl+C per terminare)",
           flush=True)

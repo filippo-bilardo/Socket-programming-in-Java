@@ -20,10 +20,10 @@ Opzioni:
 
 # Configurazione
 SERVER_SCRIPT="01-simple_tcp_server.py"
-CLIENT_SCRIPT="02-simple_tcp_client.py"
+CLIENT_SCRIPT="01-simple_tcp_client.py"
 SERVER_HOST="localhost"
 SERVER_PORT="12345"
-TEST_DIR="/home/git-projects/SISTEMI_E_RETI_3_MY/A-Socket_programming/corso socket2/01-Basi_dei_Socket_TCP/esempi"
+TEST_DIR="/ws/Corsi/SIS3-Socket-programming-in-Java/01-Introduzione-Networking/esempi/python"
 
 # Colori per output
 RED='\033[0;31m'
