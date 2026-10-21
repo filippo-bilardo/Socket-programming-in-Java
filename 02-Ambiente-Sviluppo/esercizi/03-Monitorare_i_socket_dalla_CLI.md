@@ -1,4 +1,4 @@
-# Esercizio 03: monitorare un server Java dalla CLI
+# Esercizio c: monitorare un server Java dalla CLI
 
 ## Obiettivo
 

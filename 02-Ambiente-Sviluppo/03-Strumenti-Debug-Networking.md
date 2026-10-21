@@ -68,4 +68,4 @@ netLogger.setLevel(Level.ALL);
 ## Navigazione del Corso
 - [📑 Torna all'Indice del Corso](../README.md)
 - [⬅️ Guida Precedente](02-Classi-Networking-Java.md)
-- [➡️ Esercitazione Successiva](../03-Socket-TCP-Fondamenti/README.md)
+- [➡️ Esercitazione Successiva](04-Monitorare-i-Socket-dalla-CLI)

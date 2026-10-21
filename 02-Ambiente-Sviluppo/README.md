@@ -11,6 +11,7 @@
 2. [02-Classi-Networking-Java](02-Classi-Networking-Java.md)
 3. [03-Strumenti-Debug-Networking](03-Strumenti-Debug-Networking.md)
 4. [04-Monitorare-i-Socket-dalla-CLI](04-Monitorare-i-Socket-dalla-CLI)
+5. [05-Nmap-e-TShark](05-Nmap-e-TShark.md)
 
 ## 💻 Esempi Pratici
 Tutti gli esempi di codice sono disponibili nella cartella [`/esempi`](./esempi/). Ogni esempio è linkato direttamente dalle guide teoriche.
@@ -20,6 +21,7 @@ Tutti gli esempi di codice sono disponibili nella cartella [`/esempi`](./esempi/
 1. [Git e GitHub — Socket Programming](esercizi/01-Git_e_GitHub.md)
 2. [Java e VS Code su Windows senza amministratore](esercizi/02-Java_e_VSCode_senza_amministratore.md)
 3. [Monitorare un server Java dalla CLI](esercizi/03-Monitorare_i_socket_dalla_CLI.md)
+4. [Nmap e Wireshark](esercizi/04-Nmap_e_Wireshark.md)
 
 ## Navigazione
 - [⬅️ Esercitazione Precedente](../01-Introduzione-Networking/README.md)

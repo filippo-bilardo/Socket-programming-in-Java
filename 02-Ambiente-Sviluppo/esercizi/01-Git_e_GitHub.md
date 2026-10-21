@@ -1,4 +1,4 @@
-# Esercizio 01: Git e GitHub — Socket Programming
+# Esercizio a: Git e GitHub — Socket Programming
 
 ## Obiettivo
 

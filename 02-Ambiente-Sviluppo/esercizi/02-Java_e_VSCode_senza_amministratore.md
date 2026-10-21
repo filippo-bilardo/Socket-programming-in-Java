@@ -1,4 +1,4 @@
-# Esercizio 02: Java e VS Code su Windows senza amministratore
+# Esercizio b: Java e VS Code su Windows senza amministratore
 
 ## Obiettivo
 
