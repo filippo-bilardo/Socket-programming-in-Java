@@ -60,7 +60,7 @@ Realizzare un'applicazione client-server di chat dove:
    - Gestisce l'**assegnazione automatica di username** (Client1, Client2, ecc.)
    - Notifica tutti quando un client **si connette o disconnette**
    - Visualizza statistiche: numero client connessi, messaggi inviati
-   - Gestisce la **chiusura graceful** con comando "SHUTDOWN"
+   - Come estensione, gestisce la **chiusura controllata** tramite comando locale "SHUTDOWN" nella console del server
 
 2. **Il CLIENT:**
    - Si connette al server localhost:9999
@@ -196,14 +196,21 @@ public class ChatServer {
         System.out.println("In attesa di connessioni...\n");
         
         try (ServerSocket serverSocket = new ServerSocket(PORTA)) {
-            while (true) {
-                // TODO: Accetta client e crea thread
-            }
+            // TODO: Inserisci qui l'accept loop della sezione 2.3.
+            // Non eseguire un ciclo vuoto: consumerebbe un core senza accettare client.
         } catch (IOException e) {
             System.err.println("Errore server: " + e.getMessage());
         }
     }
     
+    public static int getClientCount() { return clients.size(); }
+
+    public static List<ClientHandler> getClientsSnapshot() {
+        synchronized (clients) { return new ArrayList<>(clients); }
+    }
+
+    public static void registerClient(ClientHandler client) { clients.add(client); }
+
     // Metodo per broadcast messaggi a tutti i client
     public static void broadcast(String messaggio, ClientHandler mittente) {
         // TODO: Implementa broadcast
@@ -211,13 +218,13 @@ public class ChatServer {
     
     // Metodo per rimuovere client disconnesso
     public static void removeClient(ClientHandler client) {
-        // TODO: Rimuovi client dalla lista
+        clients.remove(client);
     }
 }
 ```
 
 #### 2.2 Classe ClientHandler (Thread per Client)
-Crea la classe interna o separata `ClientHandler.java`:
+Crea la classe separata `ClientHandler.java`. Gli scheletri contengono TODO: completa i metodi e integra i frammenti indicati prima delle prove funzionali.
 
 ```java
 class ClientHandler implements Runnable {
@@ -235,9 +242,9 @@ class ClientHandler implements Runnable {
     public void run() {
         try {
             // Setup stream I/O
-            out = new PrintWriter(socket.getOutputStream(), true);
+            out = new PrintWriter(socket.getOutputStream(), true, java.nio.charset.StandardCharsets.UTF_8);
             in = new BufferedReader(
-                new InputStreamReader(socket.getInputStream()));
+                new InputStreamReader(socket.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
             
             // Notifica connessione
             System.out.println("[CONNESSIONE] " + username + 
@@ -245,11 +252,13 @@ class ClientHandler implements Runnable {
             
             // Invia messaggio di benvenuto
             sendMessage("[SERVER]: Benvenuto " + username + 
-                "! Client connessi: " + ChatServer.clients.size());
+                "! Client connessi: " + (ChatServer.getClientCount() + 1));
+            // Rendi visibile il gestore agli altri soltanto dopo il suo benvenuto.
+            ChatServer.registerClient(this);
             
             // Notifica altri client
             ChatServer.broadcast("[SERVER]: " + username + 
-                " si è connesso. Client online: " + ChatServer.clients.size(), 
+                " si è connesso. Client online: " + ChatServer.getClientCount(),
                 this);
             
             // Loop ricezione messaggi
@@ -265,12 +274,13 @@ class ClientHandler implements Runnable {
         }
     }
     
-    public void sendMessage(String messaggio) {
+    public synchronized void sendMessage(String messaggio) {
         out.println(messaggio);
     }
     
     private void disconnect() {
-        // TODO: Gestisci disconnessione
+        ChatServer.removeClient(this);
+        try { socket.close(); } catch (IOException ignored) { }
     }
     
     public String getUsername() {
@@ -286,27 +296,18 @@ class ClientHandler implements Runnable {
 while (true) {
     Socket clientSocket = serverSocket.accept();
     
-    synchronized (clients) {
-        clientCounter++;
-        ClientHandler handler = new ClientHandler(clientSocket, clientCounter);
-        clients.add(handler);
-        new Thread(handler).start();
-    }
+    // Questo contatore è aggiornato solo dal thread di accept.
+    ClientHandler handler = new ClientHandler(clientSocket, ++clientCounter);
+    new Thread(handler).start();
 }
 ```
 
 **B) Metodo Broadcast:**
 ```java
 public static void broadcast(String messaggio, ClientHandler mittente) {
-    synchronized (clients) {
-        int count = 0;
-        for (ClientHandler client : clients) {
-            if (client != mittente) {
-                client.sendMessage(messaggio);
-                count++;
-            }
-        }
-        System.out.println("[BROADCAST] Messaggio inviato a " + count + " client");
+    // Copia sotto lock; l'invio di rete avviene dopo averlo rilasciato.
+    for (ClientHandler client : getClientsSnapshot()) {
+        if (client != mittente) client.sendMessage(messaggio);
     }
 }
 ```
@@ -335,13 +336,8 @@ if (messaggio.startsWith("/")) {
 ```java
 private void sendUserList() {
     StringBuilder lista = new StringBuilder("[SERVER]: Utenti online: ");
-    synchronized (ChatServer.clients) {
-        for (int i = 0; i < ChatServer.clients.size(); i++) {
-            lista.append(ChatServer.clients.get(i).getUsername());
-            if (i < ChatServer.clients.size() - 1) {
-                lista.append(", ");
-            }
-        }
+    for (ClientHandler client : ChatServer.getClientsSnapshot()) {
+        lista.append(client.getUsername()).append(" ");
     }
     sendMessage(lista.toString());
 }
@@ -354,10 +350,10 @@ private void disconnect() {
         ChatServer.removeClient(this);
         socket.close();
         System.out.println("[DISCONNESSIONE] " + username + " disconnesso");
-        System.out.println("Client attivi: " + ChatServer.clients.size());
+        System.out.println("Client attivi: " + ChatServer.getClientCount());
         
         ChatServer.broadcast("[SERVER]: " + username + 
-            " si è disconnesso. Client online: " + ChatServer.clients.size(), 
+            " si è disconnesso. Client online: " + ChatServer.getClientCount(),
             this);
     } catch (IOException e) {
         System.err.println("Errore chiusura socket: " + e.getMessage());
@@ -404,9 +400,9 @@ public class ChatClient {
     public void start() {
         try {
             socket = new Socket(HOST, PORTA);
-            out = new PrintWriter(socket.getOutputStream(), true);
+            out = new PrintWriter(socket.getOutputStream(), true, java.nio.charset.StandardCharsets.UTF_8);
             in = new BufferedReader(
-                new InputStreamReader(socket.getInputStream()));
+                new InputStreamReader(socket.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
             
             System.out.println("=== CHAT CLIENT ===");
             System.out.println("Connessione al server riuscita!");

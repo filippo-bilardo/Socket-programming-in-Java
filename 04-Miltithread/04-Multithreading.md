@@ -4,6 +4,10 @@
 
 Nella comunicazione socket tradizionale, un server gestisce un client per volta bloccando l'esecuzione durante l'I/O. Il multithreading consente di gestire **molteplici client contemporaneamente**, mantenendo la responsività dell'applicazione e massimizzando l'utilizzo delle risorse di sistema.
 
+Per compilare le classi riportate, salva ogni classe pubblica nel file omonimo e aggiungi gli import `java.io.*` e `java.net.*`. Il contatore degli identificativi è incrementato dal solo thread di accept, prima di avviare il gestore; non è un contatore condiviso aggiornato dai worker.
+
+Il modello con un nuovo thread per client è introduttivo: il numero di connessioni non è limitato. Il capitolo avanzato mostra come limitare worker e coda. La chiusura dei socket e il timeout restano necessari anche con un pool.
+
 Questa guida approfondisce i concetti, le strategie e le implementazioni per una comunicazione socket robusta e scalabile.
 
 ---
@@ -67,13 +71,14 @@ public class ClientHandler implements Runnable {
 
     @Override
     public void run() {
-        try {
+        try (Socket owned = socket) {
+            socket.setSoTimeout(30000);
             System.out.println("Client #" + clientID + " connesso da " + 
                 socket.getInetAddress().getHostAddress());
 
             // Stream di input/output
             BufferedReader in = new BufferedReader(
-                new InputStreamReader(socket.getInputStream()));
+                new InputStreamReader(socket.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
             PrintWriter out = new PrintWriter(
                 socket.getOutputStream(), true);
 
@@ -85,7 +90,6 @@ public class ClientHandler implements Runnable {
                 out.println(response);
             }
 
-            socket.close();
             System.out.println("Client #" + clientID + " disconnesso");
 
         } catch (IOException e) {
@@ -131,7 +135,7 @@ public class MultiThreadedServer {
 
 ---
 
-## Capitolo 7: Esercizi Proposti
+## Capitolo 3: Esercizi Proposti
 
 ### Esercizio 1: Server Echo Multithreaded Base
 Implementare un server che:
@@ -150,7 +154,7 @@ Creare un server che:
 
 ---
 
-## Capitolo 8: Domande di Autovalutazione
+## Capitolo 4: Domande di Autovalutazione
 
 ### Domanda 1
 Quale affermazione è corretta riguardante il multithreading nei socket?
@@ -165,7 +169,7 @@ Il multithreading consente effettivamente di gestire più client in parallelo. L
 
 ---
 
-### Domanda 3
+### Domanda 2
 In che caso è necessario usare la sincronizzazione nei socket multithreaded?
 
 A) Sempre, per ogni operazione
@@ -174,11 +178,11 @@ C) Mai, perché i thread sono isolati
 D) Solo in caso di errori
 
 **Risposta corretta: B**
-La sincronizzazione è necessaria solo quando risorse condivise (contatori, liste, file) sono accedute da più thread. I BufferedReader/PrintWriter sono già thread-safe per socket singoli.
+La sincronizzazione è necessaria solo quando risorse condivise (contatori, liste, file) sono accedute da più thread. In questo esempio ogni socket e i suoi stream appartengono a un solo gestore. Se più thread inviano sullo stesso stream, occorre proteggere l’intero messaggio, non solo le singole chiamate di scrittura.
 
 ---
 
-### Domanda 4
+### Domanda 3
 Cosa accade se una eccezione non è catturata nel metodo `run()` di un thread?
 
 A) Il server si arresta completamente
@@ -196,10 +200,8 @@ Se un'eccezione non è catturata in `run()`, il thread termina ma il server e gl
 | Domanda | Risposta | Spiegazione |
 |---------|----------|-------------|
 | 1 | B | Il multithreading consente gestione parallela di client |
-| 2 | B | ExecutorService evita consumo eccessivo di memoria |
-| 3 | B | La sincronizzazione è necessaria per risorse condivise |
-| 4 | C | Un'eccezione non catturata termina il thread, non il server |
-| 5 | B | Creare infiniti thread è dannoso per le risorse di sistema |
+| 2 | B | La sincronizzazione è necessaria per risorse condivise |
+| 3 | C | Un'eccezione non catturata termina il thread, non il server |
 
 ---
 
@@ -211,11 +213,12 @@ Il multithreading nei socket è essenziale per costruire server scalabili e resp
 2. **Sincronizzare correttamente** l'accesso alle risorse condivise
 3. **Gestire le eccezioni** adeguatamente
 4. **Implementare timeout e graceful shutdown** per robustezza
-5. **Testare** con carichi elevati per verificare la scalabilità
+5. **Testare** almeno due client contemporanei, EOF, errori e arresto del servizio
 
 ---
 
-## Navigazione del Corso
-- [📑 Torna all'Indice del Corso](../README.md)
-- [⬅️ Guida Precedente](03-Chiusura-Connessioni.md)
-- [➡️ Esercitazione Successiva](../04-Socket-UDP-Fondamenti/README.md)
+## Navigazione del modulo
+
+- [Indice e istruzioni di laboratorio](README.md)
+- [Prima: chiusura delle connessioni TCP](../03-Socket-TCP/03-Chiusura-Connessioni.md)
+- [Dopo: pool, sincronizzazione e arresto](05-Multithreading%20avanzato.md)

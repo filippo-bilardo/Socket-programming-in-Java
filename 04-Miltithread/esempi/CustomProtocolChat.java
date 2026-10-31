@@ -1,454 +1,216 @@
-/**
- * Nome dell'Esempio: Custom Protocol Chat
- * Guida di Riferimento: 02-Comunicazione-Dati-TCP.md
- * 
- * Obiettivo: Dimostrare protocollo personalizzato per chat multi-client.
- * 
- * Spiegazione:
- * 1. Protocollo a messaggi con header strutturato
- * 2. Server chat con broadcasting
- * 3. Client con interfaccia interattiva
- * 
- * @author Socket Programming Course
- * @version 1.0
+/** Chat multiclient con messaggi binari: int tipo, UTF mittente, UTF contenuto,
+ * long timestamp UTC (secondi). Ogni campo scritto deve essere letto nello stesso ordine.
+ * JDK 11+. Vedere README.md per comandi e limiti didattici.
  */
-
 import java.io.*;
 import java.net.*;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.*;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 public class CustomProtocolChat {
-    
-    // Protocollo messaggi
     public enum MessageType {
-        CONNECT(1),
-        DISCONNECT(2),
-        CHAT_MESSAGE(3),
-        USER_LIST(4),
-        SYSTEM_MESSAGE(5),
-        HEARTBEAT(6);
-        
+        CONNECT(1), DISCONNECT(2), CHAT_MESSAGE(3), USER_LIST(4), SYSTEM_MESSAGE(5), HEARTBEAT(6);
         private final int code;
-        
-        MessageType(int code) {
-            this.code = code;
-        }
-        
-        public int getCode() {
-            return code;
-        }
-        
+        MessageType(int code) { this.code = code; }
+        public int getCode() { return code; }
         public static MessageType fromCode(int code) {
-            for (MessageType type : values()) {
-                if (type.code == code) {
-                    return type;
-                }
-            }
+            for (MessageType type : values()) if (type.code == code) return type;
             throw new IllegalArgumentException("Codice messaggio non valido: " + code);
         }
     }
-    
     public static class Message {
         private final MessageType type;
-        private final String sender;
-        private final String content;
+        private final String sender, content;
         private final LocalDateTime timestamp;
-        
         public Message(MessageType type, String sender, String content) {
-            this.type = type;
-            this.sender = sender;
-            this.content = content;
-            this.timestamp = LocalDateTime.now();
+            this(type, sender, content, LocalDateTime.now(ZoneOffset.UTC));
         }
-        
-        // Getters
+        private Message(MessageType type, String sender, String content, LocalDateTime timestamp) {
+            this.type = type; this.sender = sender; this.content = content; this.timestamp = timestamp;
+        }
         public MessageType getType() { return type; }
         public String getSender() { return sender; }
         public String getContent() { return content; }
         public LocalDateTime getTimestamp() { return timestamp; }
-        
-        // Serializzazione binaria
         public void writeTo(DataOutputStream out) throws IOException {
             out.writeInt(type.getCode());
-            out.writeUTF(sender != null ? sender : "");
-            out.writeUTF(content != null ? content : "");
-            out.writeLong(timestamp.toEpochSecond(java.time.ZoneOffset.UTC));
+            out.writeUTF(sender == null ? "" : sender);
+            out.writeUTF(content == null ? "" : content);
+            out.writeLong(timestamp.toEpochSecond(ZoneOffset.UTC));
         }
-        
         public static Message readFrom(DataInputStream in) throws IOException {
-            int typeCode = in.readInt();
-            MessageType type = MessageType.fromCode(typeCode);
+            MessageType type;
+            try { type = MessageType.fromCode(in.readInt()); }
+            catch (IllegalArgumentException e) { throw new IOException(e.getMessage(), e); }
             String sender = in.readUTF();
             String content = in.readUTF();
-            // timestamp viene impostato automaticamente
-            return new Message(type, sender.isEmpty() ? null : sender, content.isEmpty() ? null : content);
+            LocalDateTime time;
+            try { time = LocalDateTime.ofEpochSecond(in.readLong(), 0, ZoneOffset.UTC); }
+            catch (DateTimeException e) { throw new IOException("Timestamp non valido", e); }
+            return new Message(type, sender, content, time);
         }
-        
-        @Override
-        public String toString() {
-            String timeStr = timestamp.format(DateTimeFormatter.ofPattern("HH:mm:ss"));
-            return String.format("[%s] %s: %s", timeStr, sender, content);
+        @Override public String toString() {
+            return "[" + timestamp.format(DateTimeFormatter.ofPattern("HH:mm:ss")) + " UTC] " + sender + ": " + content;
         }
     }
-    
-    /**
-     * Server Chat
-     */
     public static class ChatServer {
         private final int port;
-        private final Map<String, ClientHandler> clients = new ConcurrentHashMap<>();
-        private final ExecutorService threadPool = Executors.newCachedThreadPool();
-        private volatile boolean running = false;
-        
-        public ChatServer(int port) {
-            this.port = port;
-        }
-        
+        private final ConcurrentMap<String, ClientHandler> clients = new ConcurrentHashMap<>();
+        private final Set<Socket> sockets = ConcurrentHashMap.newKeySet();
+        // Nessuna coda di socket: oltre 50 gestori la connessione viene chiusa.
+        private final ExecutorService pool = new ThreadPoolExecutor(0, 50, 60,
+                TimeUnit.SECONDS, new SynchronousQueue<Runnable>());
+        private final Object lifecycle = new Object();
+        private volatile boolean running = true;
+        private ServerSocket listener;
+        public ChatServer(int port) { this.port = port; }
         public void start() throws IOException {
-            System.out.println("💬 Chat Server Custom Protocol");
-            System.out.println("   Porta: " + port);
-            System.out.println("🛑 Premi Ctrl+C per fermare");
-            System.out.println("=" .repeat(50));
-            
+            synchronized (lifecycle) {
+                if (!running) return;
+                listener = new ServerSocket(port);
+            }
             Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
-            
-            try (ServerSocket serverSocket = new ServerSocket(port)) {
-                serverSocket.setReuseAddress(true);
-                running = true;
-                
-                System.out.println("✅ Server avviato, in attesa di connessioni...\n");
-                
-                while (running) {
-                    Socket clientSocket = serverSocket.accept();
-                    System.out.println("🔗 Nuova connessione: " + clientSocket.getRemoteSocketAddress());
-                    
-                    ClientHandler handler = new ClientHandler(clientSocket, this);
-                    threadPool.execute(handler);
-                }
-            }
-        }
-        
-        public void addClient(String username, ClientHandler handler) {
-            clients.put(username, handler);
-            System.out.println("👤 Utente connesso: " + username + " (totale: " + clients.size() + ")");
-            
-            // Notifica altri utenti
-            broadcastMessage(new Message(MessageType.SYSTEM_MESSAGE, "Server", 
-                           username + " si è unito alla chat"));
-            
-            // Invia lista utenti al nuovo client
-            sendUserList(handler);
-        }
-        
-        public void removeClient(String username) {
-            ClientHandler removed = clients.remove(username);
-            if (removed != null) {
-                System.out.println("👤 Utente disconnesso: " + username + " (totale: " + clients.size() + ")");
-                
-                // Notifica altri utenti
-                broadcastMessage(new Message(MessageType.SYSTEM_MESSAGE, "Server", 
-                               username + " ha lasciato la chat"));
-            }
-        }
-        
-        public void broadcastMessage(Message message) {
-            List<String> disconnected = new ArrayList<>();
-            
-            for (Map.Entry<String, ClientHandler> entry : clients.entrySet()) {
-                try {
-                    entry.getValue().sendMessage(message);
-                } catch (IOException e) {
-                    disconnected.add(entry.getKey());
-                }
-            }
-            
-            // Rimuove client disconnessi
-            for (String username : disconnected) {
-                removeClient(username);
-            }
-        }
-        
-        public void sendUserList(ClientHandler handler) {
-            String userListContent = String.join(",", clients.keySet());
-            Message userListMessage = new Message(MessageType.USER_LIST, "Server", userListContent);
+            System.out.println("Chat server in ascolto sulla porta " + port);
             try {
-                handler.sendMessage(userListMessage);
-            } catch (IOException e) {
-                // Gestito dal chiamante
+                while (running) {
+                    Socket socket = listener.accept();
+                    synchronized (lifecycle) {
+                        if (!running) { close(socket); break; }
+                        sockets.add(socket);
+                        try { pool.execute(new ClientHandler(socket)); }
+                        catch (RejectedExecutionException e) { sockets.remove(socket); close(socket); }
+                    }
+                }
+            } catch (SocketException e) {
+                if (running) throw e;
+            } finally { shutdown(); }
+        }
+        public void broadcastMessage(Message message) {
+            for (ClientHandler client : clients.values()) {
+                try { client.sendMessage(message); }
+                catch (IOException e) { close(client.socket); }
             }
         }
-        
         public void shutdown() {
-            running = false;
-            
-            // Notifica disconnessione a tutti i client
-            Message shutdownMessage = new Message(MessageType.SYSTEM_MESSAGE, "Server", 
-                                                "Server in arresto...");
-            broadcastMessage(shutdownMessage);
-            
-            threadPool.shutdown();
-            System.out.println("✅ Chat server arrestato");
+            synchronized (lifecycle) {
+                if (!running) return;
+                running = false;
+                if (listener != null) try { listener.close(); } catch (IOException ignored) { }
+                for (Socket socket : sockets) close(socket);
+                pool.shutdownNow();
+            }
         }
-        
+        private static void close(Socket socket) {
+            try { socket.close(); } catch (IOException ignored) { }
+        }
         private class ClientHandler implements Runnable {
             private final Socket socket;
-            private final ChatServer server;
-            private DataInputStream input;
-            private DataOutputStream output;
+            private DataOutputStream out;
             private String username;
-            
-            public ClientHandler(Socket socket, ChatServer server) {
-                this.socket = socket;
-                this.server = server;
-            }
-            
-            @Override
-            public void run() {
-                try {
-                    input = new DataInputStream(socket.getInputStream());
-                    output = new DataOutputStream(socket.getOutputStream());
-                    
-                    // Attende messaggio di connessione
-                    Message connectMessage = Message.readFrom(input);
-                    if (connectMessage.getType() == MessageType.CONNECT) {
-                        username = connectMessage.getContent();
-                        
-                        if (username == null || username.trim().isEmpty()) {
-                            sendMessage(new Message(MessageType.SYSTEM_MESSAGE, "Server", 
-                                      "Username non valido"));
-                            return;
-                        }
-                        
-                        if (clients.containsKey(username)) {
-                            sendMessage(new Message(MessageType.SYSTEM_MESSAGE, "Server", 
-                                      "Username già in uso"));
-                            return;
-                        }
-                        
-                        server.addClient(username, this);
-                        
-                        // Loop messaggi
-                        Message message;
-                        while ((message = Message.readFrom(input)) != null) {
-                            if (message.getType() == MessageType.DISCONNECT) {
-                                break;
-                            }
-                            
-                            if (message.getType() == MessageType.CHAT_MESSAGE) {
-                                // Ribroadcast con sender corretto
-                                Message chatMessage = new Message(MessageType.CHAT_MESSAGE, 
-                                                                username, message.getContent());
-                                server.broadcastMessage(chatMessage);
-                                System.out.println("💬 " + username + ": " + message.getContent());
-                            }
-                        }
-                    }
-                    
-                } catch (EOFException e) {
-                    // Connessione chiusa normalmente
-                } catch (IOException e) {
-                    System.err.println("💥 Errore client " + username + ": " + e.getMessage());
-                } finally {
-                    if (username != null) {
-                        server.removeClient(username);
-                    }
-                    try {
-                        socket.close();
-                    } catch (IOException e) {
-                        // Ignora
-                    }
-                }
-            }
-            
+            private boolean registered;
+            ClientHandler(Socket socket) { this.socket = socket; }
             public void sendMessage(Message message) throws IOException {
-                synchronized (output) {
-                    message.writeTo(output);
-                    output.flush();
+                synchronized (out) { message.writeTo(out); out.flush(); }
+            }
+            @Override public void run() {
+                try (Socket owned = socket;
+                     DataInputStream in = new DataInputStream(socket.getInputStream())) {
+                    out = new DataOutputStream(socket.getOutputStream());
+                    socket.setSoTimeout(10000); // Identificazione entro 10 secondi.
+                    Message first = Message.readFrom(in);
+                    if (first.getType() != MessageType.CONNECT) throw new IOException("CONNECT richiesto");
+                    username = first.getContent().trim();
+                    if (username.isEmpty() || username.length() > 64 || username.contains(",")) {
+                        sendMessage(new Message(MessageType.SYSTEM_MESSAGE, "Server", "Username non valido"));
+                        return;
+                    }
+                    registered = clients.putIfAbsent(username, this) == null;
+                    if (!registered) {
+                        sendMessage(new Message(MessageType.SYSTEM_MESSAGE, "Server", "Username già in uso"));
+                        return;
+                    }
+                    socket.setSoTimeout(300000); // Inattività massima: 5 minuti.
+                    broadcastMessage(new Message(MessageType.SYSTEM_MESSAGE, "Server", username + " si è unito alla chat"));
+                    sendMessage(new Message(MessageType.USER_LIST, "Server", String.join(",", clients.keySet())));
+                    while (running) {
+                        Message message = Message.readFrom(in);
+                        if (message.getType() == MessageType.DISCONNECT) break;
+                        if (message.getType() == MessageType.CHAT_MESSAGE)
+                            broadcastMessage(new Message(MessageType.CHAT_MESSAGE, username, message.getContent()));
+                    }
+                } catch (EOFException ignored) {
+                } catch (IOException e) {
+                    if (running) System.err.println("Client " + username + ": " + e.getMessage());
+                } finally {
+                    sockets.remove(socket);
+                    if (registered && clients.remove(username, this) && running)
+                        broadcastMessage(new Message(MessageType.SYSTEM_MESSAGE, "Server", username + " ha lasciato la chat"));
                 }
             }
         }
     }
-    
-    /**
-     * Client Chat
-     */
     public static class ChatClient {
-        private final String serverHost;
-        private final int serverPort;
-        private final String username;
+        private final String host, username;
+        private final int port;
         private Socket socket;
-        private DataInputStream input;
-        private DataOutputStream output;
-        private volatile boolean connected = false;
-        
-        public ChatClient(String serverHost, int serverPort, String username) {
-            this.serverHost = serverHost;
-            this.serverPort = serverPort;
-            this.username = username;
+        private DataOutputStream out;
+        private volatile boolean connected;
+        public ChatClient(String host, int port, String username) {
+            this.host = host; this.port = port; this.username = username;
         }
-        
         public void connect() throws IOException {
-            socket = new Socket(serverHost, serverPort);
-            input = new DataInputStream(socket.getInputStream());
-            output = new DataOutputStream(socket.getOutputStream());
-            
-            // Invia messaggio di connessione
-            Message connectMessage = new Message(MessageType.CONNECT, username, username);
-            connectMessage.writeTo(output);
-            output.flush();
-            
-            connected = true;
-            
-            // Avvia thread per ricezione messaggi
-            Thread readerThread = new Thread(this::readMessages);
-            readerThread.setDaemon(true);
-            readerThread.start();
-            
-            System.out.println("✅ Connesso al server come: " + username);
-            System.out.println("Digita i tuoi messaggi (quit per uscire):");
-            System.out.println("-" .repeat(40));
-        }
-        
-        public void sendMessage(String content) throws IOException {
-            if (!connected) return;
-            
-            Message message = new Message(MessageType.CHAT_MESSAGE, username, content);
-            synchronized (output) {
-                message.writeTo(output);
-                output.flush();
-            }
-        }
-        
-        public void disconnect() throws IOException {
-            if (!connected) return;
-            
-            connected = false;
-            
-            Message disconnectMessage = new Message(MessageType.DISCONNECT, username, "");
-            disconnectMessage.writeTo(output);
-            output.flush();
-            
-            socket.close();
-            System.out.println("👋 Disconnesso dal server");
-        }
-        
-        private void readMessages() {
+            socket = new Socket();
             try {
-                while (connected) {
-                    Message message = Message.readFrom(input);
-                    
-                    switch (message.getType()) {
-                        case CHAT_MESSAGE:
-                            if (!username.equals(message.getSender())) {
-                                System.out.println("💬 " + message);
-                            }
-                            break;
-                            
-                        case SYSTEM_MESSAGE:
-                            System.out.println("🔔 " + message.getContent());
-                            break;
-                            
-                        case USER_LIST:
-                            String[] users = message.getContent().split(",");
-                            System.out.println("👥 Utenti online: " + String.join(", ", users));
-                            break;
-                            
-                        case CONNECT:
-                        case DISCONNECT:
-                        case HEARTBEAT:
-                            // Ignorati nel client
-                            break;
+                socket.connect(new InetSocketAddress(host, port), 5000);
+                out = new DataOutputStream(socket.getOutputStream());
+                send(new Message(MessageType.CONNECT, username, username));
+                connected = true;
+                Thread receiver = new Thread(() -> {
+                    try {
+                        DataInputStream in = new DataInputStream(socket.getInputStream());
+                        while (connected) System.out.println(Message.readFrom(in));
+                    } catch (IOException e) {
+                        if (connected) System.out.println("Connessione terminata: " + e.getMessage());
+                    } finally {
+                        connected = false;
+                        try { socket.close(); } catch (IOException ignored) { }
                     }
-                }
-            } catch (EOFException e) {
-                // Server disconnesso
-                System.out.println("🔌 Server disconnesso");
-                connected = false;
-            } catch (IOException e) {
-                if (connected) {
-                    System.err.println("💥 Errore ricezione: " + e.getMessage());
-                    connected = false;
-                }
-            }
+                });
+                receiver.setDaemon(true); receiver.start();
+            } catch (IOException e) { socket.close(); throw e; }
         }
-        
+        private void send(Message message) throws IOException {
+            synchronized (out) { message.writeTo(out); out.flush(); }
+        }
+        public void sendMessage(String content) throws IOException {
+            if (connected) send(new Message(MessageType.CHAT_MESSAGE, username, content));
+        }
+        public void disconnect() throws IOException {
+            try { if (connected) send(new Message(MessageType.DISCONNECT, username, "")); }
+            finally { connected = false; if (socket != null) socket.close(); }
+        }
         public void startInteractiveSession() throws IOException {
-            try (Scanner scanner = new Scanner(System.in)) {
-                while (connected) {
+            Scanner scanner = new Scanner(System.in);
+            System.out.println("Scrivi un messaggio; quit per uscire.");
+            try {
+                while (connected && scanner.hasNextLine()) {
                     String line = scanner.nextLine();
-                    
-                    if ("quit".equalsIgnoreCase(line)) {
-                        break;
-                    }
-                    
-                    if (!line.trim().isEmpty()) {
-                        sendMessage(line);
-                    }
+                    if (line.equalsIgnoreCase("quit")) break;
+                    if (!line.isBlank()) sendMessage(line);
                 }
-            }
-            
-            disconnect();
+            } finally { disconnect(); }
         }
     }
-    
     public static void main(String[] args) {
-        if (args.length == 0) {
-            System.out.println("💬 Custom Protocol Chat");
-            System.out.println("Utilizzo:");
-            System.out.println("  java CustomProtocolChat server <porta>");
-            System.out.println("  java CustomProtocolChat client <host> <porta> <username>");
-            System.out.println();
-            System.out.println("Esempi:");
-            System.out.println("  java CustomProtocolChat server 8080");
-            System.out.println("  java CustomProtocolChat client localhost 8080 Mario");
-            return;
-        }
-        
-        String mode = args[0].toLowerCase();
-        
-        if ("server".equals(mode)) {
-            if (args.length < 2) {
-                System.err.println("❌ Porta richiesta per il server");
-                return;
-            }
-            
-            try {
-                int port = Integer.parseInt(args[1]);
-                ChatServer server = new ChatServer(port);
-                server.start();
-                
-            } catch (NumberFormatException e) {
-                System.err.println("❌ Porta non valida: " + args[1]);
-            } catch (IOException e) {
-                System.err.println("💥 Errore server: " + e.getMessage());
-            }
-            
-        } else if ("client".equals(mode)) {
-            if (args.length < 4) {
-                System.err.println("❌ Host, porta e username richiesti per il client");
-                return;
-            }
-            
-            try {
-                String host = args[1];
-                int port = Integer.parseInt(args[2]);
-                String username = args[3];
-                
-                ChatClient client = new ChatClient(host, port, username);
-                client.connect();
-                client.startInteractiveSession();
-                
-            } catch (NumberFormatException e) {
-                System.err.println("❌ Porta non valida: " + args[2]);
-            } catch (IOException e) {
-                System.err.println("💥 Errore client: " + e.getMessage());
-            }
-            
-        } else {
-            System.err.println("❌ Modalità non riconosciuta: " + mode);
-        }
+        try {
+            if (args.length == 2 && args[0].equalsIgnoreCase("server"))
+                new ChatServer(Integer.parseInt(args[1])).start();
+            else if (args.length == 4 && args[0].equalsIgnoreCase("client")) {
+                ChatClient client = new ChatClient(args[1], Integer.parseInt(args[2]), args[3]);
+                client.connect(); client.startInteractiveSession();
+            } else System.out.println("java CustomProtocolChat server <porta>\njava CustomProtocolChat client <host> <porta> <nome>");
+        } catch (IOException | IllegalArgumentException e) { System.err.println(e.getMessage()); }
     }
 }

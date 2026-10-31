@@ -46,7 +46,7 @@ public class TcpServer {
         @Override
         public void run() {
             try (BufferedReader in = new BufferedReader(
-                    new InputStreamReader(clientSocket.getInputStream()));
+                    new InputStreamReader(clientSocket.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
                  PrintWriter out = new PrintWriter(
                     clientSocket.getOutputStream(), true)) {
 

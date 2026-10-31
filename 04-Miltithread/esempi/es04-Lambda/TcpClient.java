@@ -22,8 +22,8 @@ public class TcpClient {
     
     public static void main(String[] args) {
         try (Socket socket = new Socket(HOST, PORT);  // 3-way handshake
-             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-             InputStreamReader isr = new InputStreamReader(socket.getInputStream());
+             PrintWriter out = new PrintWriter(socket.getOutputStream(), true, java.nio.charset.StandardCharsets.UTF_8);
+             InputStreamReader isr = new InputStreamReader(socket.getInputStream(), java.nio.charset.StandardCharsets.UTF_8);
              BufferedReader in = new BufferedReader(isr);
              Scanner scanner = new Scanner(System.in)) 
         {    

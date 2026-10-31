@@ -17,12 +17,13 @@ public class TcpServer {
         try (
             ServerSocket serverSocket = new ServerSocket(8765);
             Socket clientSocket = serverSocket.accept(); // Attende la connessione di un client
-            BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true)
+            BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
+            PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true, java.nio.charset.StandardCharsets.UTF_8)
         ) {
             System.out.println("Server in ascolto sulla porta 8765...");
             System.out.println("Connessione stabilita con il client!");
             String message = in.readLine(); // Legge il messaggio dal client
+            if (message == null) return;
             System.out.println("Messaggio ricevuto: " + message);
             out.println("Risposta dal server: " + message.toUpperCase());
         } catch (IOException e) {

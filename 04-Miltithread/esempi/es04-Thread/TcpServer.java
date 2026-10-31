@@ -22,7 +22,8 @@ class TcpServer extends Thread {
 	}
 
 	public void run() {
-		try {
+		try (Socket owned = serverClientSocket) {
+			serverClientSocket.setSoTimeout(30000);
 			// Streams to read and write the data to socket streams
 			DataInputStream inStream = new DataInputStream(serverClientSocket.getInputStream());
 			DataOutputStream outStream = new DataOutputStream(serverClientSocket.getOutputStream());
@@ -43,12 +44,7 @@ class TcpServer extends Thread {
 				outStream.flush();
 			}
 			
-			//Prima di chiudere la connessione viene inviato un ultimo messaggio
-			sMsg="Bye";
-			System.out.println("Server.Thread " + clientNo + " Invio messaggio " + cMsg );
-			outStream.writeUTF(sMsg);
-			outStream.flush();
-
+			// Il client legge l'echo di end; nessun ulteriore messaggio non richiesto.
 			//Chiusura delle risorse utilizzate
 			inStream.close();
 			outStream.close();

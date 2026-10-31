@@ -1,8 +1,10 @@
-# Chat Multithreading - Tre Versioni (Thread, Runnable, Lambda)
+# Echo concorrente — Thread, Runnable e Lambda
 
 ## Introduzione
 
-Tre approcci progressivi per implementare un server chat multithreaded in Java:
+Tre approcci per implementare un server echo concorrente. Ogni messaggio torna al mittente; il broadcast viene aggiunto nell’esercizio finale per ottenere una chat. I file `Server.java` e `Client.java` usano invece un echo di byte sulla porta 9876, con EOF della richiesta tramite `shutdownOutput()`; i programmi di questo README usano righe sulla porta 5000.
+
+Tre varianti:
 1. **Thread** - Approccio tradizionale ed esplicito
 2. **Runnable** - Approccio modulare e flessibile
 3. **Lambda** - Approccio moderno e conciso
@@ -48,9 +50,9 @@ public class ClientThread extends Thread {
 
     @Override
     public void run() {
-        try {
+        try (Socket owned = socket) {
             BufferedReader in = new BufferedReader(
-                new InputStreamReader(socket.getInputStream()));
+                new InputStreamReader(socket.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
             PrintWriter out = new PrintWriter(
                 socket.getOutputStream(), true);
 
@@ -81,7 +83,7 @@ public class ChatClientThread {
         Socket socket = new Socket("localhost", 5000);
         
         BufferedReader in = new BufferedReader(
-            new InputStreamReader(socket.getInputStream()));
+            new InputStreamReader(socket.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
         PrintWriter out = new PrintWriter(
             socket.getOutputStream(), true);
 
@@ -160,9 +162,9 @@ public class ClientRunnable implements Runnable {
 
     @Override
     public void run() {
-        try {
+        try (Socket owned = socket) {
             BufferedReader in = new BufferedReader(
-                new InputStreamReader(socket.getInputStream()));
+                new InputStreamReader(socket.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
             PrintWriter out = new PrintWriter(
                 socket.getOutputStream(), true);
 
@@ -193,7 +195,7 @@ public class ChatClientRunnable {
         Socket socket = new Socket("localhost", 5000);
         
         BufferedReader in = new BufferedReader(
-            new InputStreamReader(socket.getInputStream()));
+            new InputStreamReader(socket.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
         PrintWriter out = new PrintWriter(
             socket.getOutputStream(), true);
 
@@ -261,9 +263,9 @@ public class ChatServerLambda {
     }
 
     private static void handleClient(Socket socket) {
-        try {
+        try (Socket owned = socket) {
             BufferedReader in = new BufferedReader(
-                new InputStreamReader(socket.getInputStream()));
+                new InputStreamReader(socket.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
             PrintWriter out = new PrintWriter(
                 socket.getOutputStream(), true);
 
@@ -294,7 +296,7 @@ public class ChatClientLambda {
         Socket socket = new Socket("localhost", 5000);
         
         BufferedReader in = new BufferedReader(
-            new InputStreamReader(socket.getInputStream()));
+            new InputStreamReader(socket.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
         PrintWriter out = new PrintWriter(
             socket.getOutputStream(), true);
 
@@ -343,7 +345,7 @@ public class ChatClientLambda {
 | **Readability** | Buona | Ottima | Ottima |
 | **Performance** | Identica | Identica | Identica |
 | **Consigliato per** | Imparare | Produzione | Prototipazione |
-| **Java richiesto** | 1.0+ | 1.5+ | 8+ |
+| **JDK usato nel modulo** | 11+ | 11+ | 11+ |
 
 ---
 
@@ -469,3 +471,4 @@ Chiamare `run()` direttamente lo esegue nel thread attuale. Devi usare `start()`
 - **Lambda**: Moderna e concisa, perfetta per codice semplice
 
 Tutte e tre le versioni sono equivalenti in termini di performance. La scelta dipende dal vostro stile di programmazione e dai requisiti del progetto.
+[Indice degli esempi](../README.md) · [Esercizio chat con broadcast](../../esercizi/a-ChatServer-Multithreaded/README.md)

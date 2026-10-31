@@ -14,8 +14,8 @@ import java.net.Socket;
 public class TcpClient {
     public static void main(String[] args) {
         try (Socket socket = new Socket("localhost", 8765)) {
-            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            PrintWriter out = new PrintWriter(socket.getOutputStream(), true, java.nio.charset.StandardCharsets.UTF_8);
+            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
 
             out.println("Ciao dal client!");
             String response = in.readLine();

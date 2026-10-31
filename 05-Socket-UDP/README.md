@@ -1,4 +1,4 @@
-# Modulo 04: Socket UDP
+# Modulo 05: Socket UDP
 
 ## 📝 Descrizione
 Questo modulo approfondisce l'utilizzo dei **socket UDP** in Java, coprendo dalle basi ai pattern avanzati per comunicazioni ad alta velocità. UDP è ideale per applicazioni che richiedono velocità e possono tollerare perdite occasionali di pacchetti.
@@ -13,7 +13,7 @@ Al termine di questo modulo sarete in grado di:
 
 ## 📚 Contenuti Teorici
 
-5. [01-Il-protocollo-UDP](05-Il-protocollo-UDP.md)
+0. [Il protocollo UDP](00-Il-protocollo-UDP.md)
 ### [1. Socket UDP - Fondamenti](01-Socket-UDP-Fondamenti.md)
 - Caratteristiche del protocollo UDP
 - API DatagramSocket e DatagramPacket
@@ -100,8 +100,7 @@ java NetworkDiscoveryBroadcast scan
 - **Reliability**: <1% packet loss in LAN
 
 ## 🔗 Collegamenti
-- **Modulo Precedente:** [03 - Socket TCP Fondamenti](../03-Socket-TCP-Fondamenti/README.md)
-- **Modulo Successivo:** [05 - SSL/TLS e Sicurezza](../05-SSL-TLS-Sicurezza/README.md)
+- **Modulo Precedente:** [04 - Server TCP multithread](../04-Miltithread/README.md)
 - **Corso Principale:** [Socket Programming in Java](../README.md)
 
 ## 📖 Risorse Aggiuntive
@@ -111,4 +110,3 @@ java NetworkDiscoveryBroadcast scan
 - [Oracle Java Networking Tutorial](https://docs.oracle.com/javase/tutorial/networking/)
 
 ---
-**⚡ Prossimo Step:** Passa al [Modulo 05 - SSL/TLS e Sicurezza](../05-SSL-TLS-Sicurezza/README.md) per imparare la sicurezza nelle comunicazioni di rete.

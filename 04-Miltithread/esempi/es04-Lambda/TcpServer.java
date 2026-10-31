@@ -31,10 +31,10 @@ public class TcpServer {
                 System.out.println("Client connesso: " + clientSocket.getRemoteSocketAddress());
 
                 new Thread(() -> {
-                    try (InputStreamReader isr = new InputStreamReader(clientSocket.getInputStream());
+                    try (Socket ignored = clientSocket;
+                         InputStreamReader isr = new InputStreamReader(clientSocket.getInputStream(), java.nio.charset.StandardCharsets.UTF_8);
                          BufferedReader in = new BufferedReader(isr);
-                         PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
-                         Socket ignored = clientSocket // Aggiunto per chiudere il socket automaticamente
+                         PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true, java.nio.charset.StandardCharsets.UTF_8)
                         ) 
                     {
                         String inputLine;

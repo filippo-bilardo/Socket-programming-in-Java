@@ -5,7 +5,7 @@
  * per ogni client utilizzando una lambda expression che implementa Runnable.
  * Ogni client può inviare messaggi che verranno rispediti indietro dal server (echo).
  * 
- * javac TcpServer.java && java TcpServer
+ * javac TcpServer_v2.java && java TcpServer_v2
  * 
  * versione: 1.0 - 18/10/25
  * autore: Filippo Bilardo
@@ -19,7 +19,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 public class TcpServer_v2 {
-    private static final int PORT = 8080;
+    private static final int PORT = 8765;
     
     public static void main(String[] args) {
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
@@ -41,7 +41,7 @@ public class TcpServer_v2 {
     
     private static void handleClient(Socket clientSocket) {
         try (BufferedReader in = new BufferedReader(
-                new InputStreamReader(clientSocket.getInputStream()));
+                new InputStreamReader(clientSocket.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
              PrintWriter out = new PrintWriter(
                 clientSocket.getOutputStream(), true)) {
             

@@ -1,66 +1,30 @@
-/**  
- * TCPServer.java - Esempio di un server TCP che gestisce più client
- * utilizzando la programmazione basata su thread.
- *
+/** Server echo con gestore Runnable nella stessa classe. Porta 8080.
  * javac TcpServer.java && java TcpServer
- *
- * versione: 1.0 - 18/10/25
- * autore: Filippo Bilardo
  */
+import java.io.*;
+import java.net.*;
+import java.nio.charset.StandardCharsets;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.ServerSocket;
-import java.net.Socket;
-
-// Classe che implementa Runnable per gestire il client
 public class TcpServer implements Runnable {
     private final Socket clientSocket;
-    private static final int PORT = 8080;
-
+    public TcpServer(Socket socket) { this.clientSocket = socket; }
     public static void main(String[] args) {
-        try (ServerSocket serverSocket = new ServerSocket(PORT)) {
-            System.out.println("Server TCP avviato sulla porta " + PORT);
-
-            while (true) {
-                Socket clientSocket = serverSocket.accept();
-                System.out.println("Client connesso: " + clientSocket.getRemoteSocketAddress());
-
-                // Crea un Runnable per gestire il client
-                Runnable clientHandler = new TcpServer(clientSocket);
-                new Thread(clientHandler).start();
-            }
+        try (ServerSocket server = new ServerSocket(8080)) {
+            System.out.println("Server TCP avviato sulla porta 8080");
+            while (true) new Thread(new TcpServer(server.accept())).start();
         } catch (IOException e) {
             System.err.println("Errore server: " + e.getMessage());
         }
     }
-    public private static class TcpClient implements Runnable {
-(Socket socket) {
-        this.clientSocket = socket;
-    }
-
-    @Override
-    public void run() {
-        try (BufferedReader in = new BufferedReader(
-                new InputStreamReader(clientSocket.getInputStream()));
-                PrintWriter out = new PrintWriter(
-                clientSocket.getOutputStream(), true)) {
-
-            String inputLine;
-            while ((inputLine = in.readLine()) != null) {
-                System.out.println("Ricevuto: " + inputLine);
-                out.println("Echo: " + inputLine);  // Echo back
-            }
+    @Override public void run() {
+        try (Socket socket = clientSocket;
+             BufferedReader in = new BufferedReader(new InputStreamReader(
+                 socket.getInputStream(), StandardCharsets.UTF_8));
+             PrintWriter out = new PrintWriter(socket.getOutputStream(), true, StandardCharsets.UTF_8)) {
+            String line;
+            while ((line = in.readLine()) != null) out.println("Echo: " + line);
         } catch (IOException e) {
-            System.err.println("Errore gestione client: " + e.getMessage());
-        } finally {
-            try {
-                clientSocket.close();
-            } catch (IOException e) {
-                System.err.println("Errore chiusura: " + e.getMessage());
-            }
+            System.err.println("Errore client: " + e.getMessage());
         }
     }
 }

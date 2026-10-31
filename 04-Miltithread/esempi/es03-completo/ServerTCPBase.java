@@ -20,6 +20,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ServerTCPBase {
+    private final long startedAt = System.currentTimeMillis();
     private static final int DEFAULT_PORT = 8080;
     private static final int DEFAULT_BACKLOG = 50;
     private static final int CLIENT_TIMEOUT = 30000; // 30 secondi
@@ -125,16 +126,18 @@ public class ServerTCPBase {
      * Gestisce un singolo client
      */
     private void handleClient(Socket clientSocket, int clientId) {
+        long connectedAt = System.currentTimeMillis();
         String clientAddr = clientSocket.getRemoteSocketAddress().toString();
         
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-             PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true)) {
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
+             PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true, java.nio.charset.StandardCharsets.UTF_8)) {
             
             // Messaggio di benvenuto
             out.println("🎉 Benvenuto nel Server TCP Base!");
             out.println("🆔 Sei il client #" + clientId);
             out.println("🕐 Timestamp connessione: " + getCurrentTimestamp());
             out.println("💡 Digita 'info' per informazioni, 'quit' per disconnetterti");
+            out.println("END");
             
             String inputLine;
             int messageCount = 0;
@@ -156,7 +159,7 @@ public class ServerTCPBase {
                     out.println("   Client ID: #" + clientId);
                     out.println("   Indirizzo: " + clientAddr);
                     out.println("   Messaggi inviati: " + messageCount);
-                    out.println("   Connesso da: " + formatDuration(System.currentTimeMillis()));
+                    out.println("   Connesso da: " + formatDuration(connectedAt));
                     out.println("   Socket locale: " + clientSocket.getLocalSocketAddress());
                     
                 } else if ("stats".equalsIgnoreCase(inputLine.trim())) {
@@ -164,7 +167,7 @@ public class ServerTCPBase {
                     out.println("📈 Statistiche Server:");
                     out.println("   Porta: " + port);
                     out.println("   Client totali serviti: " + clientCounter.get());
-                    out.println("   Server avviato: " + formatDuration(System.currentTimeMillis()));
+                    out.println("   Server avviato: " + formatDuration(startedAt));
                     
                 } else {
                     // Echo normale con timestamp
@@ -177,7 +180,7 @@ public class ServerTCPBase {
         } catch (SocketTimeoutException e) {
             System.out.println("⏰ Client #" + clientId + " timeout - disconnessione");
             try {
-                PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+                PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true, java.nio.charset.StandardCharsets.UTF_8);
                 out.println("⏰ Timeout - disconnessione automatica dopo " + CLIENT_TIMEOUT + "ms di inattività");
             } catch (IOException ignored) { }
             
@@ -218,11 +221,11 @@ public class ServerTCPBase {
     }
     
     /**
-     * Utility per durata formattata (placeholder)
+     * Utility per tempo trascorso dall’istante iniziale
      */
     private String formatDuration(long timestamp) {
-        // Implementazione semplificata
-        return getCurrentTimestamp();
+        long seconds = Math.max(0, (System.currentTimeMillis() - timestamp) / 1000);
+        return (seconds / 60) + "m " + (seconds % 60) + "s";
     }
     
     public static void main(String[] args) {

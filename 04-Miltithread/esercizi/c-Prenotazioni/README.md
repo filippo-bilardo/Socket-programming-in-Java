@@ -4,6 +4,9 @@
 
 ---
 
+> Protocollo: richieste e risposte UTF-8 terminate da newline. AUTH/PRENOTA/CANCELLA/QUIT restituiscono una riga. VISUALIZZA e LISTA restituiscono un'intestazione (`MAPPA` o `LISTA`), il contenuto (anche righe vuote) e una riga finale `END`. Il client deve consumare END prima di inviare il comando successivo. La connessione resta aperta fino a QUIT/EOF.
+
+
 ## 📋 **INFORMAZIONI GENERALI**
 
 **Materia:** Sistemi e Reti  
@@ -615,8 +618,8 @@ class ClientHandler implements Runnable {
     public void run() {
         try (
             BufferedReader in = new BufferedReader(
-                new InputStreamReader(socket.getInputStream()));
-            PrintWriter out = new PrintWriter(socket.getOutputStream(), true)
+                new InputStreamReader(socket.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
+            PrintWriter out = new PrintWriter(socket.getOutputStream(), true, java.nio.charset.StandardCharsets.UTF_8)
         ) {
             String clientIP = socket.getInetAddress().getHostAddress();
             System.out.println("[CONNESSIONE] Client da " + clientIP);
@@ -626,6 +629,7 @@ class ClientHandler implements Runnable {
             while ((comando = in.readLine()) != null) {
                 String risposta = processaComando(comando);
                 out.println(risposta);
+                if (comando.equals("VISUALIZZA") || comando.equals("LISTA")) out.println("END");
                 
                 if (comando.equals("QUIT")) {
                     break;
@@ -759,8 +763,8 @@ public class PrenotazioneClient {
         
         try {
             socket = new Socket(HOST, PORTA);
-            out = new PrintWriter(socket.getOutputStream(), true);
-            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            out = new PrintWriter(socket.getOutputStream(), true, java.nio.charset.StandardCharsets.UTF_8);
+            in = new BufferedReader(new InputStreamReader(socket.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
             scanner = new Scanner(System.in);
             
             System.out.println("Connessione al server riuscita!\n");
@@ -768,6 +772,7 @@ public class PrenotazioneClient {
             // Autenticazione
             if (!login()) {
                 System.out.println("Autenticazione fallita. Disconnessione...");
+                socket.close();
                 return;
             }
             
@@ -798,6 +803,7 @@ public class PrenotazioneClient {
         try {
             String risposta = in.readLine();
             
+            if (risposta == null) return false;
             if (risposta.startsWith("AUTH_OK")) {
                 System.out.println("✓ Login effettuato con successo!\n");
                 return true;
@@ -856,8 +862,8 @@ public class PrenotazioneClient {
             // Salta "MAPPA"
             in.readLine();
             
-            // Leggi e visualizza mappa fino a riga vuota o fine
-            while ((linea = in.readLine()) != null && !linea.isEmpty()) {
+            // Le righe vuote sono contenuto; solo END termina la risposta.
+            while ((linea = in.readLine()) != null && !linea.equals("END")) {
                 System.out.println(linea);
             }
             
@@ -931,8 +937,8 @@ public class PrenotazioneClient {
             // Salta "LISTA"
             in.readLine();
             
-            // Leggi e visualizza prenotazioni
-            while ((linea = in.readLine()) != null && !linea.isEmpty()) {
+            // Consuma tutta la risposta fino al terminatore END.
+            while ((linea = in.readLine()) != null && !linea.equals("END")) {
                 System.out.println(linea);
             }
             
@@ -1058,10 +1064,10 @@ Data: [Data]
 
 5. CODICE SORGENTE
    Link repository:
-   https://github.com/username/SIS3-Socket/tree/main/ES02c-Prenotazioni
+   <URL_DEL_TUO_REPOSITORY>
    
    Oppure link Google Drive:
-   https://drive.google.com/drive/folders/XXXXXXXXX
+   <URL_CARTELLA_CONSEGNA>
 
 6. FUNZIONALITÀ IMPLEMENTATE
    ✅ Server multi-client con thread
@@ -1239,7 +1245,10 @@ class Posto {
 
 #### 3. Timeout Prenotazione
 ```java
+import java.time.LocalDateTime;
+
 class Prenotazione {
+    private final String username;
     private LocalDateTime scadenza;
     
     public Prenotazione(String user) {
@@ -1318,7 +1327,7 @@ A: Usa un tiling window manager o cattura l'intero desktop.
 
 Opzione A - Repository Git (consigliato):
 ```
-https://github.com/username/SIS3-Socket
+<URL_DEL_TUO_REPOSITORY>
 └── ES02c-Prenotazioni/
     ├── README.md
     ├── Posto.java

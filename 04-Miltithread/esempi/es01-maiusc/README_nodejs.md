@@ -1,3 +1,9 @@
+# Confronto Java / Node.js: protocollo a righe
+
+I file della cartella scambiano una sola richiesta e una risposta per connessione, terminate da newline e codificate in UTF-8. Il server Java termina dopo un client; quello Node.js resta in ascolto. Non avviarli contemporaneamente sulla porta 8765.
+
+In TCP gli eventi `data` contengono porzioni dello stream: il server e il client Node.js accumulano i dati fino a newline, senza assumere che un evento corrisponda a un messaggio. Anche le estensioni sotto devono conservare questo accumulatore; usare `readline.createInterface({input: socket})` è un’altra possibilità.
+
 # Server TCP in Node.js - Conversione in Maiuscolo
 
 Questo esempio mostra l'implementazione equivalente in Node.js del server TCP Java che converte messaggi in maiuscolo.
@@ -70,8 +76,8 @@ echo "hello world" | nc localhost 8765
 ```java
 ServerSocket serverSocket = new ServerSocket(8765);
 Socket clientSocket = serverSocket.accept();
-BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
+PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true, java.nio.charset.StandardCharsets.UTF_8);
 String message = in.readLine();
 out.println("Risposta: " + message.toUpperCase());
 ```
@@ -115,9 +121,16 @@ const server = net.createServer((socket) => {
     clients.add(socket);
     console.log(`Connessioni attive: ${clients.size}`);
     
-    socket.on('data', (data) => {
-        const message = data.toString().trim();
-        socket.write('Risposta: ' + message.toUpperCase() + '\n');
+    socket.setEncoding('utf8');
+    let pending = '';
+    socket.on('data', data => {
+        pending += data;
+        let end;
+        while ((end = pending.indexOf('\n')) !== -1) {
+            const message = pending.slice(0, end).replace(/\r$/, '');
+            pending = pending.slice(end + 1);
+            socket.write('Risposta: ' + message.toUpperCase() + '\n');
+        }
     });
     
     socket.on('end', () => {
@@ -170,8 +183,8 @@ client.on('close', () => {
 
 | Caratteristica | Java | Node.js |
 |---------------|------|---------|
-| Modello | Thread-based | Event-loop |
-| Concorrenza | Thread per client | Single-thread event-driven |
+| Modello negli esempi base | Un solo thread, una richiesta | Event loop, più connessioni |
+| Concorrenza negli esempi base | Un client, poi il server termina | Più connessioni tramite eventi |
 | I/O | Blocking | Non-blocking |
 | Memoria | Maggiore (thread stack) | Minore (event-loop) |
 | Scalabilità | Limitata da thread | Alta (migliaia di connessioni) |
@@ -179,7 +192,7 @@ client.on('close', () => {
 ## Note
 
 - La versione Node.js è naturalmente **asincrona** e **non-bloccante**
-- Java richiede **multi-threading** per gestire più client (non mostrato nell'esempio base)
+- Con I/O bloccante Java può usare un thread per client; un’alternativa è Java NIO, fuori da questo esempio
 - Node.js gestisce facilmente **migliaia di connessioni** concorrenti grazie all'event-loop
 - Entrambe le versioni usano la porta **8765** per compatibilità
 

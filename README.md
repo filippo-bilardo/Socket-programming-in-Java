@@ -10,14 +10,8 @@ Benvenuti nel corso pratico di Socket Programming in Java! Questo corso vi guide
 1.  **[01-Introduzione-Networking](./01-Introduzione-Networking/README.md)** - Concetti fondamentali di networking e architetture client-server.
 2.  **[02-Ambiente-Sviluppo](./02-Ambiente-Sviluppo/README.md)** - Setup dell'ambiente di sviluppo e strumenti per il networking Java.
 3.  **[03-Socket-TCP](./03-Socket-TCP/README.md)** - Fondamenti della comunicazione TCP con Socket e ServerSocket.
-4.  **[04-Socket-UDP-Fondamenti](./04-Socket-UDP-Fondamenti/README.md)** - Comunicazione senza connessione con DatagramSocket.
-5.  **[05-Socket-Multicast-Broadcast](./05-Socket-Multicast-Broadcast/README.md)** - Comunicazione multicast e broadcast.
-6.  **[06-Multithreading-Network](./06-Multithreading-Network/README.md)** - Server multithreaded e gestione connessioni multiple.
-7.  **[07-Socket-Sicuri-SSL](./07-Socket-Sicuri-SSL/README.md)** - Comunicazioni sicure con SSL/TLS.
-8.  **[08-NIO-Socket-Avanzati](./08-NIO-Socket-Avanzati/README.md)** - Java NIO e socket non-bloccanti.
-9.  **[09-Ottimizzazione-Performance](./09-Ottimizzazione-Performance/README.md)** - Ottimizzazione delle performance e gestione avanzata degli errori.
-10. **[10-Architetture-Protocolli](./10-Architetture-Protocolli/README.md)** - Design patterns e protocolli personalizzati.
-11. **[11-Progetti-Completi](./11-Progetti-Completi/README.md)** - Casi di studio e progetti pratici completi.
+4.  **[04-Miltithread](./04-Miltithread/README.md)** - Server concorrenti, thread pool, sincronizzazione ed esercizi a, b e c.
+5.  **[05-Socket-UDP](./05-Socket-UDP/README.md)** - Datagrammi, broadcast e multicast.
 
 ## Obiettivo Finale
 Al termine di questo corso, sarete in grado di progettare e implementare applicazioni di rete client-server in Java, comprendendone i principi, le potenzialità e le criticità.

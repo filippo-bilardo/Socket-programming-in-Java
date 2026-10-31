@@ -48,6 +48,7 @@ public class FileTransfer {
                 
                 while (true) {
                     try (Socket clientSocket = serverSocket.accept()) {
+                        clientSocket.setSoTimeout(30000);
                         System.out.println("\n🔗 Client connesso: " + clientSocket.getRemoteSocketAddress());
                         handleFileTransfer(clientSocket);
                         
@@ -67,13 +68,20 @@ public class FileTransfer {
                 String fileName = in.readUTF();
                 long fileSize = in.readLong();
                 String checksum = in.readUTF();
+                if (fileSize < 0 || fileName.isBlank() || fileName.equals(".") || fileName.equals("..")
+                        || fileName.contains("/") || fileName.contains("\\") || fileName.contains(":") || fileName.indexOf(0) >= 0) {
+                    out.writeBoolean(false); out.writeUTF("Nome o dimensione non validi"); out.flush();
+                    return;
+                }
                 
                 System.out.println("📄 File: " + fileName);
                 System.out.println("📏 Dimensione: " + formatFileSize(fileSize));
                 System.out.println("🔐 Checksum MD5: " + checksum);
                 
                 // Prepara file di destinazione
-                Path filePath = Paths.get(saveDirectory, fileName);
+                Path directory = Paths.get(saveDirectory).toAbsolutePath().normalize();
+                Path filePath = directory.resolve(fileName).normalize();
+                if (!filePath.startsWith(directory)) throw new IOException("Percorso non valido");
                 File destFile = filePath.toFile();
                 
                 // Controlla se file esiste
@@ -86,54 +94,62 @@ public class FileTransfer {
                 byte[] buffer = new byte[8192]; // Buffer 8KB
                 MessageDigest md5 = MessageDigest.getInstance("MD5");
                 
-                try (FileOutputStream fos = new FileOutputStream(destFile);
-                     BufferedOutputStream bos = new BufferedOutputStream(fos)) {
+                Path partial = Files.createTempFile(directory, ".upload-", ".part");
+                try {
+                    try (FileOutputStream fos = new FileOutputStream(partial.toFile());
+                         BufferedOutputStream bos = new BufferedOutputStream(fos)) {
                     
-                    System.out.println("📥 Ricezione in corso...");
-                    long lastProgress = 0;
+                        System.out.println("📥 Ricezione in corso...");
+                        long lastProgress = 0;
                     
-                    while (totalReceived < fileSize) {
-                        int bytesToRead = (int) Math.min(buffer.length, fileSize - totalReceived);
-                        int bytesRead = in.read(buffer, 0, bytesToRead);
+                        while (totalReceived < fileSize) {
+                            int bytesToRead = (int) Math.min(buffer.length, fileSize - totalReceived);
+                            int bytesRead = in.read(buffer, 0, bytesToRead);
                         
-                        if (bytesRead == -1) {
-                            throw new IOException("Connessione interrotta durante il trasferimento");
-                        }
+                            if (bytesRead == -1) {
+                                throw new IOException("Connessione interrotta durante il trasferimento");
+                            }
                         
-                        bos.write(buffer, 0, bytesRead);
-                        md5.update(buffer, 0, bytesRead);
-                        totalReceived += bytesRead;
+                            bos.write(buffer, 0, bytesRead);
+                            md5.update(buffer, 0, bytesRead);
+                            totalReceived += bytesRead;
                         
-                        // Progress ogni 10%
-                        long progress = (totalReceived * 100) / fileSize;
-                        if (progress >= lastProgress + 10) {
-                            System.out.println("   Progress: " + progress + "% (" + 
-                                             formatFileSize(totalReceived) + "/" + 
-                                             formatFileSize(fileSize) + ")");
-                            lastProgress = progress;
+                            // Progress ogni 10%
+                            long progress = (totalReceived * 100) / fileSize;
+                            if (progress >= lastProgress + 10) {
+                                System.out.println("   Progress: " + progress + "% (" +
+                                                 formatFileSize(totalReceived) + "/" +
+                                                 formatFileSize(fileSize) + ")");
+                                lastProgress = progress;
+                            }
                         }
                     }
-                }
                 
-                // Verifica checksum
-                String receivedChecksum = bytesToHex(md5.digest());
-                boolean checksumValid = checksum.equalsIgnoreCase(receivedChecksum);
+                    // Verifica checksum
+                    String receivedChecksum = bytesToHex(md5.digest());
+                    boolean checksumValid = checksum.equalsIgnoreCase(receivedChecksum);
                 
-                System.out.println("✅ Trasferimento completato: " + formatFileSize(totalReceived));
-                System.out.println("🔍 Verifica integrità: " + (checksumValid ? "OK" : "FALLITA"));
+                    System.out.println("✅ Trasferimento completato: " + formatFileSize(totalReceived));
+                    System.out.println("🔍 Verifica integrità: " + (checksumValid ? "OK" : "FALLITA"));
                 
-                if (!checksumValid) {
-                    System.out.println("   Atteso: " + checksum);
-                    System.out.println("   Ricevuto: " + receivedChecksum);
-                }
+                    if (!checksumValid) {
+                        System.out.println("   Atteso: " + checksum);
+                        System.out.println("   Ricevuto: " + receivedChecksum);
+                    }
                 
-                // Risposta al client
-                out.writeBoolean(checksumValid);
-                out.writeUTF(checksumValid ? "File ricevuto correttamente" : "Errore checksum");
-                out.flush();
+                    if (checksumValid) {
+                        Files.move(partial, filePath, StandardCopyOption.REPLACE_EXISTING);
+                    }
+                    // Risposta al client
+                    out.writeBoolean(checksumValid);
+                    out.writeUTF(checksumValid ? "File ricevuto correttamente" : "Errore checksum");
+                    out.flush();
                 
-                System.out.println("📁 File salvato: " + destFile.getAbsolutePath());
+                    if (checksumValid) System.out.println("📁 File salvato: " + destFile.getAbsolutePath());
+                } finally { Files.deleteIfExists(partial); }
                 
+            } catch (InvalidPathException e) {
+                throw new IOException("Nome file non valido", e);
             } catch (NoSuchAlgorithmException e) {
                 throw new IOException("Algoritmo MD5 non disponibile", e);
             }
@@ -239,6 +255,8 @@ public class FileTransfer {
                 
                 return bytesToHex(md5.digest());
                 
+            } catch (InvalidPathException e) {
+                throw new IOException("Nome file non valido", e);
             } catch (NoSuchAlgorithmException e) {
                 throw new IOException("Algoritmo MD5 non disponibile", e);
             }

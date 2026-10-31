@@ -67,14 +67,14 @@ public class ClientTask implements Runnable {
     // Ogni thread esegue questo metodo indipendentemente dagli altri
     @Override
     public void run() {
-        try {
+        try (Socket owned = socket) {
             // Crea uno stream di output per inviare dati al cliente
             PrintWriter out = new PrintWriter(
                 socket.getOutputStream(), true);
 
             // Crea uno stream di input per ricevere dati dal cliente
             BufferedReader in = new BufferedReader(
-                new InputStreamReader(socket.getInputStream()));
+                new InputStreamReader(socket.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
 
             System.out.println("[Thread " + Thread.currentThread().getId() + 
                 "] Ho ricevuto una connessione");
@@ -126,7 +126,7 @@ public class SimpleClient {
 
         // Crea stream di input per ricevere dati
         BufferedReader in = new BufferedReader(
-            new InputStreamReader(socket.getInputStream()));
+            new InputStreamReader(socket.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
 
         // Chiedi all'utente un messaggio
         Scanner keyboard = new Scanner(System.in);
@@ -273,7 +273,7 @@ public class ClientTaskWithLoop implements Runnable {
             PrintWriter out = new PrintWriter(
                 socket.getOutputStream(), true);
             BufferedReader in = new BufferedReader(
-                new InputStreamReader(socket.getInputStream()));
+                new InputStreamReader(socket.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
 
             System.out.println("Thread " + Thread.currentThread().getId() + 
                 " iniziato");
@@ -318,7 +318,7 @@ public class SimpleClientWithLoop {
         PrintWriter out = new PrintWriter(
             socket.getOutputStream(), true);
         BufferedReader in = new BufferedReader(
-            new InputStreamReader(socket.getInputStream()));
+            new InputStreamReader(socket.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
 
         Scanner keyboard = new Scanner(System.in);
 

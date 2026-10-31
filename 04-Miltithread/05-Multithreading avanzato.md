@@ -1,15 +1,21 @@
-# Comunicazione Multithreading con Socket TCP in Java
+# Multithreading avanzato: pool, stato condiviso e arresto
 
-## Capitolo 3: Thread Pool e ExecutorService
+Leggi prima la [guida di base](04-Multithreading.md). Le classi sono esempi separati: aggiungi gli import `java.io.*`, `java.net.*`, `java.util.concurrent.*` e salva ogni classe pubblica nel file omonimo. `ClientHandler` è quello della guida base. Il frammento di utilizzo di `CustomExceptionHandler` va inserito in un metodo, non dopo una classe a livello di file.
 
-### 3.1 Il Problema della Creazione Illimitata di Thread
+`Executors.newFixedThreadPool(n)` riutilizza n worker ma usa una coda senza limite. Il numero di thread, il numero di task in coda e il numero di socket aperti sono grandezze distinte. L'esempio GracefulServer limita la coda a 20 task e i worker a 10; una connessione oltre la capacità viene chiusa. `shutdownNow()` tenta l'interruzione dei task: i socket devono essere chiusi esplicitamente per sbloccare le letture.
+
+Riferimenti: [Executors](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/Executors.html), [ExecutorService](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/ExecutorService.html).
+
+## Capitolo 1: Thread Pool e ExecutorService
+
+### 1.1 Il Problema della Creazione Illimitata di Thread
 
 Creare un thread per ogni connessione può causare problemi:
 - Consumo eccessivo di memoria
 - Degradazione delle prestazioni
 - Risorse di sistema esaurite (Context switch)
 
-### 3.2 Thread Pool con ExecutorService
+### 1.2 Thread Pool con ExecutorService
 
 ```java
 public class ServerWithThreadPool {
@@ -43,7 +49,7 @@ public class ServerWithThreadPool {
 }
 ```
 
-### 3.3 Tipi di ExecutorService
+### 1.3 Tipi di ExecutorService
 
 ```java
 // Pool di dimensione fissa
@@ -61,9 +67,9 @@ ScheduledExecutorService scheduled = Executors.newScheduledThreadPool(5);
 
 ---
 
-## Capitolo 4: Sincronizzazione e Risorse Condivise
+## Capitolo 2: Sincronizzazione e Risorse Condivise
 
-### 4.1 Il Problema della Race Condition
+### 2.1 Il Problema della Race Condition
 
 Quando più thread accedono a una risorsa condivisa:
 
@@ -82,7 +88,7 @@ public class UnsafeCounter {
 }
 ```
 
-### 4.2 Soluzione con Synchronization
+### 2.2 Soluzione con Synchronization
 
 ```java
 public class SafeCounter {
@@ -99,9 +105,11 @@ public class SafeCounter {
 }
 ```
 
-### 4.3 Lock Espliciti (ReentrantLock)
+### 2.3 Lock Espliciti (ReentrantLock)
 
 ```java
+import java.util.concurrent.locks.ReentrantLock;
+
 public class CounterWithLock {
     private int count = 0;
     private final ReentrantLock lock = new ReentrantLock();
@@ -126,7 +134,7 @@ public class CounterWithLock {
 }
 ```
 
-### 4.4 Esempio Pratico: Server con Statistiche Condivise
+### 2.4 Esempio Pratico: Server con Statistiche Condivise
 
 ```java
 public class ServerWithStatistics {
@@ -163,9 +171,9 @@ public class ServerWithStatistics {
 
 ---
 
-## Capitolo 5: Gestione delle Eccezioni
+## Capitolo 3: Gestione delle Eccezioni
 
-### 5.1 Eccezioni nei Thread
+### 3.1 Eccezioni nei Thread
 
 Le eccezioni non catturate in un thread non interrompono il server:
 
@@ -181,7 +189,7 @@ public class ClientHandlerWithExceptionHandling implements Runnable {
     public void run() {
         try {
             BufferedReader in = new BufferedReader(
-                new InputStreamReader(socket.getInputStream()));
+                new InputStreamReader(socket.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
             PrintWriter out = new PrintWriter(
                 socket.getOutputStream(), true);
 
@@ -218,7 +226,7 @@ public class ClientHandlerWithExceptionHandling implements Runnable {
 }
 ```
 
-### 5.2 UncaughtExceptionHandler
+### 3.2 UncaughtExceptionHandler
 
 ```java
 public class CustomExceptionHandler implements Thread.UncaughtExceptionHandler {
@@ -237,56 +245,70 @@ thread.start();
 
 ---
 
-## Capitolo 6: Best Practice e Pattern
+## Capitolo 4: Best Practice e Pattern
 
-### 6.1 Graceful Shutdown
+### 4.1 Graceful Shutdown
 
 ```java
+import java.io.*;
+import java.net.*;
+import java.util.*;
+import java.util.concurrent.*;
+
 public class GracefulServer {
-    private ServerSocket serverSocket;
-    private ExecutorService threadPool;
+    private final ServerSocket serverSocket;
+    private final ExecutorService threadPool = new ThreadPoolExecutor(
+        10, 10, 0, TimeUnit.MILLISECONDS, new ArrayBlockingQueue<Runnable>(20));
+    private final Set<Socket> clients = ConcurrentHashMap.newKeySet();
+    private final Object lifecycle = new Object();
     private volatile boolean running = true;
 
     public GracefulServer(int port) throws IOException {
         serverSocket = new ServerSocket(port);
-        threadPool = Executors.newFixedThreadPool(10);
     }
-
-    public void start() {
-        while (running) {
-            try {
-                Socket clientSocket = serverSocket.accept();
-                threadPool.execute(new ClientHandler(clientSocket));
-            } catch (SocketException e) {
-                if (!running) {
-                    System.out.println("Server in arresto...");
-                }
-            } catch (IOException e) {
-                System.err.println("Errore: " + e.getMessage());
-            }
-        }
-    }
-
-    public void shutdown() throws IOException {
-        running = false;
-        serverSocket.close();
-        threadPool.shutdown();
-        
+    public void start() throws IOException {
         try {
-            if (!threadPool.awaitTermination(30, TimeUnit.SECONDS)) {
-                threadPool.shutdownNow();
+            while (running) {
+                Socket socket = serverSocket.accept();
+                synchronized (lifecycle) {
+                    if (!running) { socket.close(); break; }
+                    clients.add(socket);
+                    try {
+                        threadPool.execute(() -> {
+                            try { new ClientHandler(socket).run(); }
+                            finally { clients.remove(socket); close(socket); }
+                        });
+                    } catch (RejectedExecutionException e) {
+                        clients.remove(socket);
+                        close(socket); // Coda piena: non abbandonare il socket accettato.
+                    }
+                }
             }
-        } catch (InterruptedException e) {
+        } catch (SocketException e) {
+            if (running) throw e;
+        } finally { shutdown(); }
+    }
+    public void shutdown() {
+        synchronized (lifecycle) {
+            if (!running) return;
+            running = false;
+            try { serverSocket.close(); } catch (IOException ignored) { }
+            // Sblocca readLine(), anche per i task ancora in coda.
+            for (Socket socket : clients) close(socket);
             threadPool.shutdownNow();
-            Thread.currentThread().interrupt();
         }
-        
-        System.out.println("Server arrestato");
+        try {
+            if (!threadPool.awaitTermination(5, TimeUnit.SECONDS))
+                System.err.println("Alcuni gestori non sono ancora terminati");
+        } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+    }
+    private static void close(Socket socket) {
+        try { socket.close(); } catch (IOException ignored) { }
     }
 }
 ```
 
-### 6.2 Timeout sui Socket
+### 4.2 Timeout sui Socket
 
 ```java
 public class ClientHandlerWithTimeout implements Runnable {
@@ -303,7 +325,7 @@ public class ClientHandlerWithTimeout implements Runnable {
             socket.setSoTimeout(SOCKET_TIMEOUT);
             
             BufferedReader in = new BufferedReader(
-                new InputStreamReader(socket.getInputStream()));
+                new InputStreamReader(socket.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
             PrintWriter out = new PrintWriter(
                 socket.getOutputStream(), true);
 
@@ -332,7 +354,7 @@ public class ClientHandlerWithTimeout implements Runnable {
 }
 ```
 
-### 6.3 Logging Strutturato
+### 4.3 Logging Strutturato
 
 ```java
 import java.time.LocalDateTime;
@@ -359,17 +381,17 @@ public class ServerLogger {
 
 ---
 
-## Capitolo 7: Esercizi Proposti
+## Capitolo 5: Esercizi Proposti
 
-### Esercizio 2: Server Calcolatrice
-Creare un server che:
+### Esercizio 1: Estensione della Calcolatrice
+Riprendi la calcolatrice proposta nella guida base e aggiungi pool limitato e timeout. Il server:
 - Riceve operazioni matematiche (es: "ADD 5 3")
 - Esegue il calcolo in un thread separato
 - Rimanda il risultato al client
 - (OPZIONALE) Usa un thread pool con max 5 thread
 - (OPZIONALE) Implementa timeout su socket
 
-### Esercizio 3: Server Chat Multicanale
+### Esercizio 2: Server Chat Multicanale
 Sviluppare un server chat con:
 - Multiple canali (rooms)
 - Broadcast dei messaggi a tutti gli utenti di un canale
@@ -377,7 +399,7 @@ Sviluppare un server chat con:
 - Conteggio degli utenti per canale
 - Comandi: /join /leave /list
 
-### Esercizio 4: Server di Log Centralizzato
+### Esercizio 3: Server di Log Centralizzato
 Realizzare un server che:
 - Riceve messaggi di log da più client
 - Salva i log in un file con timestamp
@@ -387,7 +409,7 @@ Realizzare un server che:
 
 ---
 
-## Capitolo 8: Domande di Autovalutazione
+## Capitolo 6: Domande di Autovalutazione
 
 ### Domanda 1
 Quale affermazione è corretta riguardante il multithreading nei socket?
@@ -424,7 +446,7 @@ C) Mai, perché i thread sono isolati
 D) Solo in caso di errori
 
 **Risposta corretta: B**
-La sincronizzazione è necessaria solo quando risorse condivise (contatori, liste, file) sono accedute da più thread. I BufferedReader/PrintWriter sono già thread-safe per socket singoli.
+La sincronizzazione è necessaria solo quando risorse condivise (contatori, liste, file) sono accedute da più thread. Ogni gestore usa il proprio socket. Se più thread condividono uno stream, devono coordinare la scrittura di messaggi completi.
 
 ---
 
@@ -442,15 +464,15 @@ Se un'eccezione non è catturata in `run()`, il thread termina ma il server e gl
 ---
 
 ### Domanda 5
-Quale pattern è SCONSIGLIATO per limitare il numero di connessioni?
+Quale scelta crea un numero potenzialmente illimitato di thread per le connessioni?
 
-A) Usare ExecutorService.newFixedThreadPool(n)
+A) Usare Executors.newFixedThreadPool(n)
 B) Creare un nuovo thread senza limite per ogni client
 C) Implementare una coda di connessioni in attesa
 D) Usare un pool di dimensione dinamica con limite massimo
 
 **Risposta corretta: B**
-Creare thread senza limite è pericoloso e può esaurire le risorse di sistema. I pattern A, C e D sono corretti per limitare le connessioni.
+Creare thread senza limite è pericoloso e può esaurire le risorse di sistema. Un fixed pool limita i worker ma usa una coda senza limite: non limita da solo le connessioni accettate. Per un limite complessivo servono ammissione controllata, coda limitata e rifiuto con chiusura del socket. Anche una coda generica, senza capacità massima, non costituisce un limite.
 
 ---
 
@@ -476,3 +498,10 @@ Il multithreading nei socket è essenziale per costruire server scalabili e resp
 4. **Implementare timeout e graceful shutdown** per robustezza
 5. **Testare** con carichi elevati per verificare la scalabilità
 
+
+## Navigazione
+
+- [Indice del modulo](README.md)
+- [Guida di base e classe ClientHandler](04-Multithreading.md)
+- [Esercizi a, b e c](esercizi/README.md)
+- [Modulo successivo: UDP](../05-Socket-UDP/README.md)

@@ -31,6 +31,9 @@ public class ConnectionPoolServer {
     private ServerSocket serverSocket;
     private ThreadPoolExecutor threadPool;
     private volatile boolean running = false;
+    private final Object lifecycle = new Object();
+    private final java.util.Set<ClientHandler> handlers = ConcurrentHashMap.newKeySet();
+    private Thread statsThread;
     
     // Statistiche
     private final AtomicLong totalConnections = new AtomicLong(0);
@@ -44,6 +47,9 @@ public class ConnectionPoolServer {
     
     public ConnectionPoolServer(int port, int maxConnections, int coreThreads, 
                               int maxThreads, long keepAliveTime) {
+        if (port < 1 || port > 65535 || coreThreads < 1 || maxThreads < coreThreads
+                || maxConnections < maxThreads || keepAliveTime < 0)
+            throw new IllegalArgumentException("Richiesti: porta 1-65535 e 1 <= core <= max-thread <= max-conn");
         this.port = port;
         this.maxConnections = maxConnections;
         this.coreThreads = coreThreads;
@@ -66,7 +72,9 @@ public class ConnectionPoolServer {
             maxThreads,
             keepAliveTime,
             TimeUnit.MILLISECONDS,
-            new ArrayBlockingQueue<>(maxConnections),
+            // La coda lascia spazio ai worker oltre i core prima del limite di ammissione.
+            maxConnections == maxThreads ? new SynchronousQueue<Runnable>()
+                : new ArrayBlockingQueue<Runnable>(maxConnections - maxThreads),
             new ThreadFactory() {
                 private final AtomicInteger counter = new AtomicInteger(1);
                 @Override
@@ -85,11 +93,7 @@ public class ConnectionPoolServer {
                     // Chiude la connessione rifiutata
                     if (r instanceof ClientHandler) {
                         ClientHandler handler = (ClientHandler) r;
-                        try {
-                            handler.getSocket().close();
-                        } catch (IOException e) {
-                            // Ignora errori nella chiusura
-                        }
+                        handler.finish(false);
                     }
                 }
             }
@@ -98,12 +102,14 @@ public class ConnectionPoolServer {
         // Shutdown hook per chiusura pulita
         Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
         
-        // Avvia thread per statistiche
-        startStatsThread();
-        
-        serverSocket = new ServerSocket(port);
-        serverSocket.setReuseAddress(true);
+        try {
+            serverSocket = new ServerSocket(port);
+        } catch (IOException e) {
+            threadPool.shutdownNow();
+            throw e;
+        }
         running = true;
+        startStatsThread();
         
         System.out.println("✅ Server avviato e in ascolto...\n");
         
@@ -111,24 +117,18 @@ public class ConnectionPoolServer {
             while (running) {
                 Socket clientSocket = serverSocket.accept();
                 
-                // Controlla limite connessioni
-                if (activeConnections.get() >= maxConnections) {
-                    System.err.println("🚫 Limite connessioni raggiunto, rifiuto client: " + 
-                                     clientSocket.getRemoteSocketAddress());
-                    clientSocket.close();
-                    rejectedConnections.incrementAndGet();
-                    continue;
+                synchronized (lifecycle) {
+                    if (!running || activeConnections.get() >= maxConnections) {
+                        clientSocket.close();
+                        rejectedConnections.incrementAndGet();
+                        continue;
+                    }
+                    totalConnections.incrementAndGet();
+                    activeConnections.incrementAndGet();
+                    ClientHandler handler = new ClientHandler(clientSocket);
+                    handlers.add(handler);
+                    threadPool.execute(handler);
                 }
-                
-                totalConnections.incrementAndGet();
-                activeConnections.incrementAndGet();
-                
-                System.out.println("🔗 Nuova connessione: " + clientSocket.getRemoteSocketAddress() + 
-                                 " (attive: " + activeConnections.get() + ")");
-                
-                // Submette al thread pool
-                ClientHandler handler = new ClientHandler(clientSocket);
-                threadPool.execute(handler);
             }
             
         } catch (IOException e) {
@@ -141,41 +141,26 @@ public class ConnectionPoolServer {
     }
     
     public void shutdown() {
-        if (!running) return;
-        
-        running = false;
-        
-        System.out.println("\n🛑 Arresto server...");
-        
-        // Chiude server socket
-        if (serverSocket != null && !serverSocket.isClosed()) {
-            try {
-                serverSocket.close();
-            } catch (IOException e) {
-                System.err.println("Errore chiusura server socket: " + e.getMessage());
-            }
+        synchronized (lifecycle) {
+            if (!running) return;
+            running = false;
+            if (serverSocket != null) try { serverSocket.close(); } catch (IOException ignored) { }
+            // Chiude anche socket inattivi e task ancora in coda, che interrupt non sblocca.
+            for (ClientHandler handler : handlers) handler.finish(false);
+            threadPool.shutdownNow();
+            if (statsThread != null) statsThread.interrupt();
         }
-        
-        // Arresta thread pool
-        if (threadPool != null) {
-            threadPool.shutdown();
-            try {
-                if (!threadPool.awaitTermination(10, TimeUnit.SECONDS)) {
-                    threadPool.shutdownNow();
-                    System.out.println("⚠️ Forzata chiusura thread pool");
-                }
-            } catch (InterruptedException e) {
-                threadPool.shutdownNow();
-                Thread.currentThread().interrupt();
-            }
-        }
-        
+        try {
+            if (!threadPool.awaitTermination(5, TimeUnit.SECONDS))
+                System.err.println("Attesa terminazione gestori scaduta");
+        } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+
         printFinalStats();
         System.out.println("✅ Server arrestato");
     }
     
     private void startStatsThread() {
-        Thread statsThread = new Thread(() -> {
+        statsThread = new Thread(() -> {
             while (running) {
                 try {
                     Thread.sleep(10000); // Ogni 10 secondi
@@ -224,6 +209,7 @@ public class ConnectionPoolServer {
     private class ClientHandler implements Runnable {
         private final Socket socket;
         private final String clientAddress;
+        private final AtomicBoolean finished = new AtomicBoolean();
         
         public ClientHandler(Socket socket) {
             this.socket = socket;
@@ -234,6 +220,14 @@ public class ConnectionPoolServer {
             return socket;
         }
         
+        void finish(boolean completed) {
+            if (!finished.compareAndSet(false, true)) return;
+            try { socket.close(); } catch (IOException ignored) { }
+            handlers.remove(this);
+            activeConnections.decrementAndGet();
+            if (completed) completedConnections.incrementAndGet();
+        }
+
         @Override
         public void run() {
             System.out.println("🔧 Handler avviato per: " + clientAddress + 
@@ -244,13 +238,14 @@ public class ConnectionPoolServer {
                 socket.setSoTimeout(30000); // 30 secondi
                 
                 BufferedReader in = new BufferedReader(
-                    new InputStreamReader(socket.getInputStream()));
-                PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+                    new InputStreamReader(socket.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
+                PrintWriter out = new PrintWriter(socket.getOutputStream(), true, java.nio.charset.StandardCharsets.UTF_8);
                 
                 // Messaggio di benvenuto
                 out.println("🏊 Benvenuto nel Connection Pool Server!");
                 out.println("Comandi disponibili: info, stats, echo <messaggio>, quit");
                 out.print("> ");
+                out.flush();
                 
                 String line;
                 while ((line = in.readLine()) != null) {
@@ -285,6 +280,7 @@ public class ConnectionPoolServer {
                     }
                     
                     out.print("> ");
+                out.flush();
                 }
                 
             } catch (SocketTimeoutException e) {
@@ -292,15 +288,8 @@ public class ConnectionPoolServer {
             } catch (IOException e) {
                 System.out.println("💥 Errore I/O per " + clientAddress + ": " + e.getMessage());
             } finally {
-                try {
-                    socket.close();
-                } catch (IOException e) {
-                    // Ignora errori nella chiusura
-                }
-                
-                activeConnections.decrementAndGet();
-                completedConnections.incrementAndGet();
-                
+                finish(true);
+
                 System.out.println("🔌 Connessione chiusa: " + clientAddress + 
                                  " (attive: " + activeConnections.get() + ")");
             }
@@ -327,19 +316,15 @@ public class ConnectionPoolServer {
             
             ConnectionPoolServer server;
             
-            if (args.length >= 4) {
-                int maxConn = Integer.parseInt(args[1]);
-                int coreThreads = Integer.parseInt(args[2]);
-                int maxThreads = Integer.parseInt(args[3]);
-                server = new ConnectionPoolServer(port, maxConn, coreThreads, maxThreads, 60000L);
-            } else {
-                server = new ConnectionPoolServer(port);
-            }
-            
+            int maxConn = args.length > 1 ? Integer.parseInt(args[1]) : 50;
+            int core = args.length > 2 ? Integer.parseInt(args[2]) : 5;
+            int max = args.length > 3 ? Integer.parseInt(args[3]) : 20;
+            server = new ConnectionPoolServer(port, maxConn, core, max, 60000L);
+
             server.start();
             
-        } catch (NumberFormatException e) {
-            System.err.println("❌ Parametri numerici non validi");
+        } catch (IllegalArgumentException e) {
+            System.err.println("❌ Parametri non validi: " + e.getMessage());
         } catch (IOException e) {
             System.err.println("💥 Errore avvio server: " + e.getMessage());
         }

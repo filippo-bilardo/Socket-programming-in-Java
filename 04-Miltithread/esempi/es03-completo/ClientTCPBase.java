@@ -124,12 +124,18 @@ public class ClientTCPBase {
     /**
      * Test comunicazione base
      */
-    public static void testCommunication(Socket socket) {
+    public static boolean testCommunication(Socket socket) {
         System.out.println("\n💬 Test comunicazione...");
         
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-             PrintWriter out = new PrintWriter(socket.getOutputStream(), true)) {
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
+             PrintWriter out = new PrintWriter(socket.getOutputStream(), true, java.nio.charset.StandardCharsets.UTF_8)) {
             
+            // Consuma il benvenuto, delimitato da una riga END.
+            String welcome;
+            while ((welcome = in.readLine()) != null && !welcome.equals("END")) {
+                System.out.println(welcome);
+            }
+            if (welcome == null) throw new IOException("Benvenuto incompleto");
             // Invia messaggio di test
             String testMessage = "Hello Server! Timestamp: " + System.currentTimeMillis();
             System.out.println("📤 Invio: " + testMessage);
@@ -140,15 +146,19 @@ public class ClientTCPBase {
             String response = in.readLine();
             
             if (response != null) {
+                if (!response.endsWith(testMessage)) throw new IOException("Echo inatteso: " + response);
                 System.out.println("📨 Risposta: " + response);
             } else {
-                System.out.println("⚠️ Nessuna risposta ricevuta (server ha chiuso la connessione)");
+                throw new IOException("Nessuna risposta ricevuta");
             }
             
+            return true;
         } catch (SocketTimeoutException e) {
             System.err.println("⏰ Timeout durante la comunicazione: " + e.getMessage());
+            return false;
         } catch (IOException e) {
             System.err.println("❌ Errore durante la comunicazione: " + e.getMessage());
+            return false;
         }
     }
     
@@ -177,9 +187,8 @@ public class ClientTCPBase {
         if (socket != null) {
             try {
                 // Test comunicazione
-                testCommunication(socket);
-                
-                System.out.println("\n✅ Test completato con successo");
+                if (testCommunication(socket)) System.out.println("\n✅ Test completato con successo");
+                else System.err.println("Test comunicazione fallito");
                 
             } finally {
                 // Chiusura socket
