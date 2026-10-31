@@ -6,18 +6,20 @@
 
 ## 📋 **Indice**
 
-1. [Introduzione al TCP](#-introduzione-al-tcp)
-2. [Caratteristiche del TCP](#-caratteristiche-del-tcp)
-3. [Architettura TCP](#️-architettura-tcp)
-4. [Connessioni TCP](#-connessioni-tcp)
-5. [Gestione Flusso Dati](#-gestione-flusso-dati)
-6. [Controllo Errori](#️-controllo-errori)
-7. [TCP in Java](#☕-tcp-in-java)
-8. [Esempi Pratici](#-esempi-pratici)
-9. [Performance e Ottimizzazione](#-performance-e-ottimizzazione)
-10. [Troubleshooting](#-troubleshooting)
+1. [Introduzione al TCP](#introduzione-al-tcp)
+2. [Caratteristiche del TCP](#caratteristiche-del-tcp)
+3. [Architettura TCP](#architettura-tcp)
+4. [Connessioni TCP](#connessioni-tcp)
+5. [Gestione Flusso Dati](#gestione-flusso-dati)
+6. [Controllo Errori](#controllo-errori)
+7. [TCP in Java](#tcp-in-java)
+8. [Esempi Pratici](#esempi-pratici)
+9. [Performance e Ottimizzazione](#performance-e-ottimizzazione)
+10. [Troubleshooting](#troubleshooting)
 
 ---
+
+<a id="introduzione-al-tcp"></a>
 
 ## 🎯 **Introduzione al TCP**
 
@@ -26,7 +28,7 @@
 Il **Transmission Control Protocol (TCP)** è un protocollo di trasporto della suite TCP/IP che fornisce:
 
 - **Connessione affidabile** tra due host
-- **Consegna garantita** dei dati
+- **Trasferimento affidabile e ordinato** dei byte, oppure segnalazione di un errore
 - **Ordinamento** dei pacchetti
 - **Controllo di flusso** e congestione
 - **Rilevamento e correzione errori**
@@ -85,6 +87,8 @@ Il **Transmission Control Protocol (TCP)** è un protocollo di trasporto della s
 
 ---
 
+<a id="caratteristiche-del-tcp"></a>
+
 ## ⚙️ **Caratteristiche del TCP**
 
 ### 🔗 **1. Connection-Oriented**
@@ -113,7 +117,7 @@ Client                    Server
 #### **A) Acknowledgment (ACK)**
 Ogni segmento ricevuto viene confermato:
 
-```java
+```text
 // Esempio concettuale
 Client invia: "Hello" (seq=100)
 Server risponde: ACK=105 (conferma ricezione di 5 byte)
@@ -122,7 +126,7 @@ Server risponde: ACK=105 (conferma ricezione di 5 byte)
 #### **B) Ritrasmissione Automatica**
 Se l'ACK non arriva entro il timeout:
 
-```java
+```text
 Client invia: "World" (seq=105)
 // Timeout scaduto, nessun ACK ricevuto
 Client ri-invia: "World" (seq=105) // Stesso numero sequenza
@@ -131,7 +135,7 @@ Client ri-invia: "World" (seq=105) // Stesso numero sequenza
 #### **C) Rilevamento Duplicati**
 Il numero di sequenza previene duplicati:
 
-```java
+```text
 Server riceve: "World" (seq=105) → Nuovo, accetta
 Server riceve: "World" (seq=105) → Duplicato, scarta
 ```
@@ -151,8 +155,8 @@ Ricezione: [1] [2] [3] [4] [5]  ← Riordinati da TCP
 **Sliding Window Protocol** previene overflow del buffer:
 
 ```
-Sender Buffer:    [████████░░░░] Window size = 8
-Receiver Buffer:  [██░░░░░░░░░░] Available = 2
+Sender Buffer:    [████████░░░░] Window size = 8 byte
+Receiver Buffer:  [██░░░░░░░░░░] Available = 2 byte
 
 TCP Header: Window = 2 ← Receiver comunica spazio disponibile
 ```
@@ -161,7 +165,7 @@ TCP Header: Window = 2 ← Receiver comunica spazio disponibile
 
 TCP rileva e gestisce la congestione di rete:
 
-```java
+```text
 // Algoritmi principali
 1. Slow Start     → Crescita esponenziale velocità
 2. Congestion Avoidance → Crescita lineare  
@@ -170,6 +174,8 @@ TCP rileva e gestisce la congestione di rete:
 ```
 
 ---
+
+<a id="architettura-tcp"></a>
 
 ## 🏗️ **Architettura TCP**
 
@@ -204,12 +210,12 @@ TCP rileva e gestisce la congestione di rete:
 | **Sequence Number** | 32 bit | Numero sequenza per ordinamento |
 | **ACK Number** | 32 bit | Prossimo byte atteso |
 | **Window Size** | 16 bit | Spazio buffer disponibile |
-| **Flags** | 6 bit | SYN, ACK, FIN, RST, PSH, URG |
+| **Flags** | 8 bit nel formato base della RFC 9293 | Include SYN, ACK, FIN, RST, PSH, URG, ECE e CWR |
 | **Checksum** | 16 bit | Controllo integrità |
 
 ### 🚩 **Flag TCP**
 
-```java
+```text
 SYN = 1  → Stabilire connessione
 ACK = 1  → Acknowledgment valido  
 FIN = 1  → Chiudere connessione
@@ -219,6 +225,8 @@ URG = 1  → Dati urgenti (raramente usato)
 ```
 
 ---
+
+<a id="connessioni-tcp"></a>
 
 ## 🔗 **Connessioni TCP**
 
@@ -248,10 +256,15 @@ Socket socket = new Socket("localhost", 8080);
 // Server side  
 ServerSocket serverSocket = new ServerSocket(8080);
 Socket client = serverSocket.accept(); 
-// ↑ accept() completa il 3-way handshake
+// ↑ accept() preleva una connessione dalla coda del sistema operativo
 ```
 
-### 👋 **Four-Way Handshake (Chiusura)**
+### 👋 **Chiusura della connessione**
+
+Il diagramma mostra una chiusura ordinata tipica. FIN e ACK possono essere
+combinati, quindi non servono sempre quattro pacchetti distinti; un reset può
+interrompere la connessione. La chiusura di un socket non attesta che
+l'applicazione remota abbia elaborato tutti i dati.
 
 ```
 Client                           Server
@@ -274,7 +287,7 @@ Client                           Server
 #### **Implementazione Java:**
 ```java
 // Chiusura esplicita
-socket.close(); // Invia FIN e gestisce handshake
+socket.close(); // Chiude il socket: il sistema gestisce la chiusura TCP
 
 // Chiusura con try-with-resources (automatica)
 try (Socket socket = new Socket("localhost", 8080)) {
@@ -285,33 +298,41 @@ try (Socket socket = new Socket("localhost", 8080)) {
 ### 🔄 **Stati Connessione TCP**
 
 ```
-CLOSED → LISTEN → SYN_RCVD → ESTABLISHED → FIN_WAIT_1 → CLOSED
-   ↑         ↓                      ↓              ↓
-   └─────────┴──────────────────────┴──────────────┘
-   
-Stati principali:
-• CLOSED      → Connessione chiusa
-• LISTEN      → Server in ascolto  
-• SYN_SENT    → Client ha inviato SYN
-• ESTABLISHED → Connessione attiva
-• FIN_WAIT_1  → Inizio chiusura
-• TIME_WAIT   → Attesa finale prima chiusura
+Socket di ascolto del server: CLOSED → LISTEN
+Apertura lato client: CLOSED → SYN_SENT → ESTABLISHED
+Apertura lato server, connessione accettata: SYN_RCVD → ESTABLISHED
+
+Chiusura attiva tipica:
+ESTABLISHED → FIN_WAIT_1 → FIN_WAIT_2 → TIME_WAIT → CLOSED
+
+Chiusura passiva tipica:
+ESTABLISHED → CLOSE_WAIT → LAST_ACK → CLOSED
+
+Il socket di ascolto è distinto dai socket delle connessioni accettate.
+Le transizioni possono variare per chiusura simultanea o reset.
 ```
 
 ---
 
+<a id="gestione-flusso-dati"></a>
+
 ## 🌊 **Gestione Flusso Dati**
+
+TCP è un **flusso di byte**, non una sequenza di messaggi preservati. Le letture
+possono restituire porzioni diverse dalle scritture. Definisci un framing nel
+protocollo applicativo: riga, lunghezza o EOF. Un ACK conferma dati al livello
+TCP, non l'esito dell'elaborazione applicativa.
 
 ### 📏 **Sliding Window**
 
 Il **controllo di flusso** impedisce al mittente di sovraccaricare il ricevitore:
 
-```java
+```text
 // Esempio semplificato
-Sender Window:   [1][2][3][4]░░░░  ← Può inviare 4 segmenti
-Receiver Buffer: ██░░░░░░░░░░░░░░  ← Spazio per 2 segmenti
+Sender Window:   [1][2][3][4]░░░░  ← Esempio: quattro byte disponibili
+Receiver Buffer: ██░░░░░░░░░░░░░░  ← Esempio: spazio per due byte
 
-TCP Header Window = 2  ← Receiver dice: "Ho spazio per 2"
+TCP Header Window = 2  ← Due byte, prima dell’eventuale window scaling
 ```
 
 #### **Algoritmo Sliding Window:**
@@ -322,12 +343,17 @@ public class SlidingWindow {
     private int base;           // Primo byte non confermato  
     private int nextSeq;        // Prossimo numero sequenza
     
-    public boolean canSend() {
-        return (nextSeq - base) < windowSize;
+    public SlidingWindow(int windowSize) {
+        if (windowSize <= 0) throw new IllegalArgumentException("Finestra non positiva");
+        this.windowSize = windowSize;
+    }
+
+    public boolean canSend(int byteCount) {
+        return byteCount >= 0 && byteCount <= windowSize - (nextSeq - base);
     }
     
     public void sendData(byte[] data) {
-        if (canSend()) {
+        if (canSend(data.length)) {
             // Invia segmento con seq = nextSeq
             nextSeq += data.length;
         }
@@ -345,7 +371,7 @@ public class SlidingWindow {
 
 Ottimizza l'efficienza combinando piccoli segmenti:
 
-```java
+```text
 // SENZA Nagle (inefficiente)
 send("H");    // 1 byte + 40 byte header = 41 byte
 send("e");    // 1 byte + 40 byte header = 41 byte  
@@ -369,6 +395,8 @@ socket.setTcpNoDelay(false); // Abilita Nagle per efficienza
 
 ---
 
+<a id="controllo-errori"></a>
+
 ## 🛡️ **Controllo Errori**
 
 ### 🔍 **Checksum**
@@ -376,13 +404,17 @@ socket.setTcpNoDelay(false); // Abilita Nagle per efficienza
 TCP calcola un checksum per rilevare errori utilizzando la somma in complemento a uno dei dati:
 
 ```java
-// Pseudo-codice calcolo checksum
+// Esempio della somma su parole a 16 bit, non un checksum TCP completo.
+// Per TCP occorrono anche pseudo-header IP, header TCP e campo checksum a zero.
 public int calculateChecksum(byte[] data) {
     int sum = 0;
-    for (int i = 0; i < data.length - 1; i += 2) {
-        sum += ((data[i] << 8) | data[i + 1]);
+    for (int i = 0; i < data.length; i += 2) {
+        int word = (data[i] & 0xFF) << 8;
+        if (i + 1 < data.length) word |= data[i + 1] & 0xFF;
+        sum += word;
+        sum = (sum & 0xFFFF) + (sum >>> 16);
     }
-    return ~sum & 0xFFFF;  // Complemento a 1
+    return ~sum & 0xFFFF;
 }
 ```
 
@@ -408,7 +440,7 @@ public class AdaptiveTimeout {
     }
     
     public double getTimeout() {
-        return srtt + 4 * rttvar;  // RFC formula
+        return Math.max(1000, srtt + 4 * rttvar); // Esempio con misure in ms e minimo 1 s
     }
 }
 ```
@@ -418,19 +450,19 @@ public class AdaptiveTimeout {
 Ritrasmissione rapida senza aspettare timeout:
 
 ```
-Sender invia: [1] [2] [3] [4] [5]
-Receiver riceve: [1] [2] [4] [5]  ← [3] perso
-
-ACK ricevuti dal Sender:
-ACK=2  ← OK
-ACK=2  ← Duplicate (manca [3])  
-ACK=2  ← Duplicate (manca [3])
-ACK=2  ← Duplicate (manca [3]) ← 3° duplicato!
-
-→ Fast Retransmit di [3] senza aspettare timeout
+Esempio con segmenti di un byte: seq=100,101,102,103,104,105.
+Il byte seq=102 viene perso.
+Ricezione di 100 → ACK=101
+Ricezione di 101 → ACK=102 (prossimo byte atteso)
+Ricezione di 103 → ACK=102 (primo duplicato)
+Ricezione di 104 → ACK=102 (secondo duplicato)
+Ricezione di 105 → ACK=102 (terzo duplicato)
+→ Ritrasmissione del byte seq=102 senza attendere il timeout.
 ```
 
 ---
+
+<a id="tcp-in-java"></a>
 
 ## ☕ **TCP in Java**
 
@@ -448,13 +480,13 @@ public class TCPServer {
             System.out.println("Server TCP avviato sulla porta " + PORT);
             
             while (true) {
-                // Accept() esegue 3-way handshake automaticamente
+                // Il sistema gestisce l’handshake; accept() preleva una connessione in coda
                 Socket clientSocket = serverSocket.accept();
                 System.out.println("Client connesso: " + 
                     clientSocket.getRemoteSocketAddress());
                 
-                // Gestisci client (in questo esempio: thread separato)
-                new Thread(() -> handleClient(clientSocket)).start();
+                // Un client per volta; la concorrenza è trattata nel modulo successivo.
+                handleClient(clientSocket);
             }
         } catch (IOException e) {
             System.err.println("Errore server: " + e.getMessage());
@@ -463,9 +495,9 @@ public class TCPServer {
     
     private static void handleClient(Socket clientSocket) {
         try (BufferedReader in = new BufferedReader(
-                new InputStreamReader(clientSocket.getInputStream()));
+                new InputStreamReader(clientSocket.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
              PrintWriter out = new PrintWriter(
-                clientSocket.getOutputStream(), true)) {
+                clientSocket.getOutputStream(), true, java.nio.charset.StandardCharsets.UTF_8)) {
             
             String inputLine;
             while ((inputLine = in.readLine()) != null) {
@@ -476,7 +508,7 @@ public class TCPServer {
             System.err.println("Errore gestione client: " + e.getMessage());
         } finally {
             try {
-                clientSocket.close(); // 4-way handshake automatico
+                clientSocket.close(); // Rilascia il socket e avvia la chiusura TCP
             } catch (IOException e) {
                 System.err.println("Errore chiusura: " + e.getMessage());
             }
@@ -498,9 +530,9 @@ public class TCPClient {
     
     public static void main(String[] args) {
         try (Socket socket = new Socket(HOST, PORT);  // 3-way handshake
-             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+             PrintWriter out = new PrintWriter(socket.getOutputStream(), true, java.nio.charset.StandardCharsets.UTF_8);
              BufferedReader in = new BufferedReader(
-                new InputStreamReader(socket.getInputStream()));
+                new InputStreamReader(socket.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
              Scanner scanner = new Scanner(System.in)) {
             
             System.out.println("Connesso al server " + HOST + ":" + PORT);
@@ -508,6 +540,7 @@ public class TCPClient {
             String userInput;
             while (true) {
                 System.out.print("Messaggio (o 'quit'): ");
+                if (!scanner.hasNextLine()) break;
                 userInput = scanner.nextLine();
                 
                 if ("quit".equalsIgnoreCase(userInput)) {
@@ -516,12 +549,13 @@ public class TCPClient {
                 
                 out.println(userInput);           // Invia al server
                 String response = in.readLine();  // Ricevi risposta
+                if (response == null) break;
                 System.out.println("Server: " + response);
             }
             
         } catch (IOException e) {
             System.err.println("Errore client: " + e.getMessage());
-        } // close() automatico → 4-way handshake
+        } // close() automatico: il sistema gestisce la chiusura TCP
         
         System.out.println("Client disconnesso.");
     }
@@ -530,7 +564,17 @@ public class TCPClient {
 
 ### ⚙️ **Configurazioni Socket TCP**
 
+`Socket` e `ServerSocket` sono classi distinte. Configura le opzioni del socket
+di ascolto prima del binding; i timeout di lettura si impostano invece sui
+socket connessi. Linger è un'opzione avanzata e non sostituisce un protocollo
+di chiusura concordato.
+
 ```java
+import java.io.*;
+import java.net.*;
+import java.util.*;
+import java.util.concurrent.*;
+
 public class TCPConfiguration {
     public static void configureTCPSocket(Socket socket) throws IOException {
         // Controllo di flusso
@@ -548,11 +592,19 @@ public class TCPConfiguration {
         socket.setSoTimeout(30000);   // 30 secondi timeout lettura
         
         // Linger (comportamento chiusura)
-        socket.setSoLinger(true, 10); // Aspetta 10 sec prima chiusura forzata
+        socket.setSoLinger(true, 10); // Limita l’attesa di close con dati pendenti; opzione avanzata
         
-        // Riuso indirizzo (utile per server)
-        if (socket instanceof ServerSocket) {
-            ((ServerSocket) socket).setReuseAddress(true);
+    }
+
+    public static ServerSocket createServerSocket(int port) throws IOException {
+        ServerSocket server = new ServerSocket();
+        try {
+            server.setReuseAddress(true); // Configurare prima del binding.
+            server.bind(new InetSocketAddress(port));
+            return server;
+        } catch (IOException | RuntimeException error) {
+            server.close();
+            throw error;
         }
     }
 }
@@ -560,11 +612,24 @@ public class TCPConfiguration {
 
 ---
 
+<a id="esempi-pratici"></a>
+
 ## 💡 **Esempi Pratici**
 
 ### 📂 **File Transfer TCP**
 
+Gli helper seguenti vanno salvati in file distinti, aggiungendo gli import
+indicati, e chiamati da un client/server. EOF delimita la fine del file: la
+chiusura dello stream termina anche la connessione, che non è riutilizzabile
+per un altro file. Per un protocollo riutilizzabile occorre dichiarare la
+lunghezza del file o un altro framing.
+
 ```java
+import java.io.*;
+import java.net.*;
+import java.util.*;
+import java.util.concurrent.*;
+
 // Server per ricevere file
 public class FileServer {
     public static void receiveFile(Socket socket, String fileName) {
@@ -585,7 +650,7 @@ public class FileServer {
     }
 }
 
-// Client per inviare file  
+// Salvare la classe seguente in FileClient.java, con import java.io.* e java.net.*.
 public class FileClient {
     public static void sendFile(Socket socket, String fileName) {
         try (FileInputStream fis = new FileInputStream(fileName);
@@ -609,68 +674,60 @@ public class FileClient {
 
 ### 💬 **Chat TCP Multi-Client**
 
-```java
-// Server chat con thread pool
-public class ChatServer {
-    private static Set<ClientHandler> clients = ConcurrentHashMap.newKeySet();
-    
-    public static void broadcast(String message, ClientHandler sender) {
-        clients.parallelStream()
-               .filter(client -> client != sender)
-               .forEach(client -> client.sendMessage(message));
-    }
-    
-    static class ClientHandler implements Runnable {
-        private Socket socket;
-        private PrintWriter out;
-        private String username;
-        
-        // Implementazione gestione client...
-    }
-}
-```
+Il codice completo della [chat con protocollo personalizzato](../04-Miltithread/esempi/CustomProtocolChat.java)
+è nel modulo multithreading. Prima di introdurre thread e broadcast, verifica
+un singolo dialogo request/response con i programmi TCP di questa guida.
 
 ### 🔐 **HTTP Server Semplificato**
 
 ```java
+import java.io.*;
+import java.net.*;
+import java.nio.charset.StandardCharsets;
+
 public class SimpleHTTPServer {
-    public static void handleHTTPRequest(Socket client) {
-        try (BufferedReader in = new BufferedReader(
-                new InputStreamReader(client.getInputStream()));
-             PrintWriter out = new PrintWriter(client.getOutputStream())) {
-            
-            // Leggi richiesta HTTP
-            String requestLine = in.readLine();
-            System.out.println("Request: " + requestLine);
-            
-            // Salta gli header
-            String line;
-            while ((line = in.readLine()) != null && !line.isEmpty()) {
-                // Skip headers
-            }
-            
-            // Risposta HTTP semplice
-            out.println("HTTP/1.1 200 OK");
-            out.println("Content-Type: text/html");
-            out.println("Connection: close");
-            out.println(); // Linea vuota obbligatoria
-            out.println("<html><body><h1>Hello from TCP Server!</h1></body></html>");
-            out.flush();
-            
-        } catch (IOException e) {
-            System.err.println("Errore HTTP: " + e.getMessage());
+    public static void handleHTTPRequest(Socket client) throws IOException {
+        client.setSoTimeout(5000);
+        BufferedReader in = new BufferedReader(new InputStreamReader(
+                client.getInputStream(), StandardCharsets.ISO_8859_1));
+        String requestLine = in.readLine();
+        if (requestLine == null) return;
+        String line;
+        while ((line = in.readLine()) != null && !line.isEmpty()) {
+            // La riga vuota termina gli header, non serve attendere EOF.
         }
+        if (line == null) return;
+        byte[] body = "Hello from TCP Server!\n".getBytes(StandardCharsets.UTF_8);
+        String headers = "HTTP/1.1 200 OK\r\n"
+                + "Content-Type: text/plain; charset=utf-8\r\n"
+                + "Content-Length: " + body.length + "\r\n"
+                + "Connection: close\r\n\r\n";
+        OutputStream out = client.getOutputStream();
+        out.write(headers.getBytes(StandardCharsets.US_ASCII));
+        out.write(body);
+        out.flush();
     }
 }
 ```
 
+Questo helper illustra una risposta a una GET e viene chiamato da un server
+che chiude il client dopo la risposta. Per il programma eseguibile con gestione
+GET/HEAD e rifiuto degli altri metodi vedi [HelloServer](esercizi/b-HelloServer/README.md).
+
 ---
+
+<a id="performance-e-ottimizzazione"></a>
 
 ## 🚀 **Performance e Ottimizzazione**
 
 ### 📊 **Metriche Performance TCP**
 
 ```java
+import java.io.*;
+import java.net.*;
+import java.util.*;
+import java.util.concurrent.*;
+
 public class TCPMetrics {
     public static void measureTCPPerformance(Socket socket) {
         try {
@@ -715,6 +772,11 @@ public class TCPMetrics {
 ### ⚡ **Ottimizzazioni TCP**
 
 ```java
+import java.io.*;
+import java.net.*;
+import java.util.*;
+import java.util.concurrent.*;
+
 public class TCPOptimization {
     
     // 1. Buffer Size Tuning
@@ -722,7 +784,11 @@ public class TCPOptimization {
         // Calcola buffer ottimale: Bandwidth × RTT
         int bandwidth = 100_000_000; // 100 Mbps in bit/s
         int rtt = 50;               // 50ms RTT
-        int optimalBuffer = (bandwidth / 8) * (rtt / 1000); // Bytes
+        long bufferBytes = (bandwidth / 8L) * rtt / 1000L;
+        if (bufferBytes <= 0 || bufferBytes > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("Dimensione buffer non valida");
+        }
+        int optimalBuffer = (int) bufferBytes; // 625000 byte con i valori proposti
         
         socket.setReceiveBufferSize(optimalBuffer);
         socket.setSendBufferSize(optimalBuffer);
@@ -737,7 +803,7 @@ public class TCPOptimization {
     // 3. Enable Keep-Alive per connessioni lunghe
     public static void optimizeLongConnections(Socket socket) throws IOException {
         socket.setKeepAlive(true);
-        socket.setSoLinger(false, 0); // Chiusura immediata
+        socket.setSoLinger(false, 0); // Disabilita linger: non richiede un reset immediato
     }
     
     // 4. Thread Pool per server scalabili
@@ -748,9 +814,19 @@ public class TCPOptimization {
 }
 ```
 
-### 📈 **Benchmark TCP vs UDP**
+### 📈 **Benchmark TCP vs UDP — esempio da completare con un ricevitore**
+
+Il tempo di invio locale non è un confronto completo tra TCP e UDP. Avvia un
+ricevitore per ciascun protocollo, misura i byte realmente ricevuti e le perdite
+UDP, usa lo stesso carico e riporta le condizioni della prova. Il loop di invio
+seguente, da solo, non dimostra prestazioni equivalenti o superiori.
 
 ```java
+import java.io.*;
+import java.net.*;
+import java.util.*;
+import java.util.concurrent.*;
+
 public class TCPvsUDPBenchmark {
     
     public static void benchmarkTCP() {
@@ -797,11 +873,23 @@ public class TCPvsUDPBenchmark {
 
 ---
 
+<a id="troubleshooting"></a>
+
 ## 🔧 **Troubleshooting**
 
 ### 🕵️ **Diagnosi Problemi TCP**
 
+Il metodo seguente è destinato al server echo **a righe** della sezione TCP in
+Java, non a EchoService con `readUTF` né a un servizio arbitrario. Il successo di
+`isReachable()` dipende dai meccanismi consentiti dal sistema e non è necessario
+perché una porta TCP sia raggiungibile.
+
 ```java
+import java.io.*;
+import java.net.*;
+import java.util.*;
+import java.util.concurrent.*;
+
 public class TCPDiagnostics {
     
     public static void diagnoseConnection(String host, int port) {
@@ -821,12 +909,19 @@ public class TCPDiagnostics {
             socket.connect(new InetSocketAddress(host, port), 5000);
             System.out.println("Connessione TCP: OK");
             
-            // 3. Test velocità connessione
-            long startTime = System.currentTimeMillis();
-            socket.getOutputStream().write(1);
-            socket.getInputStream().read();
-            long rtt = System.currentTimeMillis() - startTime;
-            System.out.println("RTT: " + rtt + "ms");
+            // 3. Prova applicativa: il peer deve implementare l’echo a righe UTF-8.
+            socket.setSoTimeout(3000);
+            PrintWriter out = new PrintWriter(socket.getOutputStream(), true,
+                    java.nio.charset.StandardCharsets.UTF_8);
+            BufferedReader in = new BufferedReader(new InputStreamReader(
+                    socket.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
+            long startTime = System.nanoTime();
+            out.println("PING");
+            String response = in.readLine();
+            if (response == null) throw new EOFException("Peer disconnesso");
+            long elapsedMillis = (System.nanoTime() - startTime) / 1_000_000;
+            System.out.println("Risposta: " + response);
+            System.out.println("Tempo richiesta/risposta applicativo: " + elapsedMillis + " ms");
             
         } catch (IOException e) {
             System.out.println("Connessione TCP fallita: " + e.getMessage());
@@ -850,7 +945,7 @@ public class TCPDiagnostics {
 ```bash
 # Monitor connessioni TCP
 netstat -an | grep :8080
-ss -tuln | grep :8080
+ss -tanp '( sport = :8080 or dport = :8080 )'
 
 # Cattura pacchetti TCP  
 tcpdump -i any port 8080
@@ -870,9 +965,9 @@ nc -v localhost 8080
 ## 📚 **Risorse e Approfondimenti**
 
 ### 📖 **RFC e Specifiche**
-- **RFC 793** - Transmission Control Protocol
+- [RFC 9293](https://www.rfc-editor.org/rfc/rfc9293.html) - Specifica TCP corrente, sostituisce RFC 793
 - **RFC 1122** - Requirements for Internet Hosts  
-- **RFC 2581** - TCP Congestion Control
+- [RFC 5681](https://www.rfc-editor.org/rfc/rfc5681.html) - TCP Congestion Control, sostituisce RFC 2581
 - **RFC 3390** - Increasing TCP's Initial Window
 
 ### 🔗 **Link Utili**
@@ -892,7 +987,7 @@ nc -v localhost 8080
 ## 🎯 **Riassunto Chiave**
 
 ### **Vantaggi TCP**
-- 🛡️ **Affidabilità** - Consegna garantita
+- 🛡️ **Affidabilità** - Trasferimento ordinato dei byte e rilevamento degli errori
 - 📊 **Ordinamento** - Dati nell'ordine corretto  
 - 🔄 **Controllo flusso** - Previene overflow
 - 🚥 **Controllo congestione** - Ottimizza utilizzo rete
@@ -914,8 +1009,8 @@ nc -v localhost 8080
 
 ### 🚫 **Quando NON Usare TCP**
 - ❌ **Gaming real-time** (meglio UDP)
-- ❌ **Streaming video** (tolleranza perdite)
-- ❌ **DNS queries** (singola richiesta/risposta)
+- **Streaming video**: la scelta dipende dal protocollo; anche TCP e QUIC sono usati
+- **DNS**: usa sia UDP sia TCP; TCP è necessario in diversi scenari
 - ❌ **IoT sensors** (overhead eccessivo)
 - ❌ **Broadcast/multicast** (non supportati)
 
@@ -923,8 +1018,8 @@ nc -v localhost 8080
 
 ## Navigazione del Corso
 - [📑 Torna all'Indice del Corso](../README.md)
-- [⬅️ Guida Precedente](03-Architetture-Client-Server.md)
-- [➡️ Guida Successiva](05-Il-protocollo-UDP.md)
+- [⬅️ Modulo precedente](../02-Ambiente-Sviluppo/README.md)
+- [➡️ Guida successiva](01-Creazione-Socket-TCP.md)
 
 ---
 

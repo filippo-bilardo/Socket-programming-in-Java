@@ -9,7 +9,7 @@ Benvenuti nel corso pratico di Socket Programming in Java! Questo corso vi guide
 
 1.  **[01-Introduzione-Networking](./01-Introduzione-Networking/README.md)** - Concetti fondamentali di networking e architetture client-server.
 2.  **[02-Ambiente-Sviluppo](./02-Ambiente-Sviluppo/README.md)** - Setup dell'ambiente di sviluppo e strumenti per il networking Java.
-3.  **[03-Socket-TCP-Fondamenti](./03-Socket-TCP-Fondamenti/README.md)** - Fondamenti della comunicazione TCP con Socket e ServerSocket.
+3.  **[03-Socket-TCP](./03-Socket-TCP/README.md)** - Fondamenti della comunicazione TCP con Socket e ServerSocket.
 4.  **[04-Socket-UDP-Fondamenti](./04-Socket-UDP-Fondamenti/README.md)** - Comunicazione senza connessione con DatagramSocket.
 5.  **[05-Socket-Multicast-Broadcast](./05-Socket-Multicast-Broadcast/README.md)** - Comunicazione multicast e broadcast.
 6.  **[06-Multithreading-Network](./06-Multithreading-Network/README.md)** - Server multithreaded e gestione connessioni multiple.

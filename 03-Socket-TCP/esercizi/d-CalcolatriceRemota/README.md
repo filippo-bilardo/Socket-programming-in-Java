@@ -55,27 +55,44 @@ Realizzare un'applicazione client-server dove:
    - Esegue il calcolo richiesto (+, -, *, /)
    - Restituisce il risultato al client
    - Gestisce errori (divisione per zero, formato non valido)
-   - Tiene un contatore delle operazioni eseguite
-   - Si chiude quando riceve il comando "QUIT"
+   - Conta soltanto i calcoli riusciti; richieste errate e QUIT non incrementano il contatore
+   - Su QUIT risponde con CHIUSURA e il contatore, poi chiude client e server
 
 2. **Il CLIENT:**
    - Si connette al server localhost:8844
    - Presenta un menu interattivo all'utente
    - Invia le richieste di calcolo al server
    - Mostra i risultati ricevuti
-   - Permette di disconnettersi con il comando "quit"
+   - Invia QUIT senza distinzione di maiuscole e legge il saluto prima di disconnettersi
+
+### Protocollo e materiale disponibile
+
+I due programmi sono **da implementare**: gli scheletri e i frammenti sotto
+illustrano i passaggi e non costituiscono già una soluzione completa. Crea i
+file indicati prima di usare i comandi di compilazione.
+
+Usa righe di testo UTF-8, una richiesta e una risposta per riga, con flush.
+Per ogni calcolo invia `NUMERO OPERAZIONE NUMERO`; accetta il punto decimale e
+spazi tra gli elementi. Rifiuta NaN, infinito, operatori sconosciuti e divisione
+per zero con una riga `ERRORE: ...`, continuando la sessione. Il risultato usa
+la rappresentazione `double`, per esempio `RISULTATO: 15.0`.
+
+Il client invia `QUIT`, legge `CHIUSURA: Operazioni eseguite: N. Arrivederci!`
+e poi chiude. Il server termina dopo il flush della risposta. Se il client
+si disconnette senza QUIT, il server libera la sessione e può accettare un altro
+client in sequenza. Il contatore del server conta soltanto i calcoli riusciti.
 
 ### 📐 **Esempi di Interazione:**
 
 ```
 Client input: "10 + 5"
-Server response: "RISULTATO: 15"
+Server response: "RISULTATO: 15.0"
 
 Client input: "20 / 4"  
 Server response: "RISULTATO: 5.0"
 
 Client input: "8 * 3"
-Server response: "RISULTATO: 24"
+Server response: "RISULTATO: 24.0"
 
 Client input: "15 / 0"
 Server response: "ERRORE: Divisione per zero non consentita"
@@ -84,7 +101,7 @@ Client input: "abc + 5"
 Server response: "ERRORE: Formato non valido. Usa: NUMERO OPERAZIONE NUMERO"
 
 Client input: "quit"
-Server response: "CHIUSURA: Operazioni eseguite: 4. Arrivederci!"
+Server response: "CHIUSURA: Operazioni eseguite: 3. Arrivederci!"
 ```
 
 ---
@@ -153,33 +170,41 @@ while (true) {
 }
 ```
 
-**C) Parsing delle Richieste:**
+**C) Parsing delle richieste, dentro un metodo che restituisce la risposta testuale:**
 ```java
 // Esempio di parsing: "10 + 5"
-String[] parti = richiesta.split(" ");
+String[] parti = richiesta.trim().split("\\s+");
 if (parti.length != 3) {
     return "ERRORE: Formato non valido";
 }
 double num1 = Double.parseDouble(parti[0]);
 String operazione = parti[1];
 double num2 = Double.parseDouble(parti[2]);
+if (!Double.isFinite(num1) || !Double.isFinite(num2)) {
+    return "ERRORE: Sono ammessi soltanto numeri finiti";
+}
 ```
 
-**D) Esecuzione Calcoli:**
+Gestisci `NumberFormatException`, `ArithmeticException` e gli altri errori di
+validazione nel metodo di elaborazione, trasformandoli in risposte `ERRORE: ...`.
+
+**D) Metodo di calcolo da aggiungere alla classe server:**
 ```java
-switch (operazione) {
-    case "+": return num1 + num2;
-    case "-": return num1 - num2;
-    case "*": return num1 * num2;
-    case "/": 
-        if (num2 == 0) throw new ArithmeticException("Divisione per zero");
-        return num1 / num2;
-    default: throw new IllegalArgumentException("Operazione non supportata");
+private static double calcola(double num1, String operazione, double num2) {
+    switch (operazione) {
+        case "+": return num1 + num2;
+        case "-": return num1 - num2;
+        case "*": return num1 * num2;
+        case "/":
+            if (num2 == 0) throw new ArithmeticException("Divisione per zero");
+            return num1 / num2;
+        default: throw new IllegalArgumentException("Operazione non supportata");
+    }
 }
 ```
 
 #### 2.3 Checklist Server:
-- [ ] ServerSocket sulla porta 8080
+- [ ] ServerSocket sulla porta 8844
 - [ ] Loop di accettazione client
 - [ ] Parsing corretto delle richieste
 - [ ] Implementazione delle 4 operazioni matematiche
@@ -203,7 +228,7 @@ import java.util.Scanner;
 
 public class CalcolatriceClient {
     private static final String HOST = "localhost";
-    private static final int PORTA = 8080;
+    private static final int PORTA = 8844;
     
     public static void main(String[] args) {
         // TODO: Implementa qui il client
@@ -216,8 +241,8 @@ public class CalcolatriceClient {
 **A) Connessione al Server:**
 ```java
 try (Socket socket = new Socket(HOST, PORTA);
-     PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-     BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+     PrintWriter out = new PrintWriter(socket.getOutputStream(), true, java.nio.charset.StandardCharsets.UTF_8);
+     BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
      Scanner scanner = new Scanner(System.in)) {
     // Comunicazione...
 }
@@ -235,19 +260,30 @@ System.out.println("Scrivi 'quit' per uscire");
 ```java
 while (true) {
     System.out.print("Calcolo > ");
-    String input = scanner.nextLine();
+    if (!scanner.hasNextLine()) {
+        break; // EOF da tastiera
+    }
+    String input = scanner.nextLine().trim();
     
     if (input.equalsIgnoreCase("quit")) {
         out.println("QUIT");
+        String chiusura = in.readLine();
+        System.out.println(chiusura == null ? "Server disconnesso" : chiusura);
         break;
     }
     
-    // Invia richiesta e ricevi risposta
+    out.println(input);
+    String risposta = in.readLine();
+    if (risposta == null) {
+        System.out.println("Server disconnesso");
+        break;
+    }
+    System.out.println(risposta);
 }
 ```
 
 #### 3.3 Checklist Client:
-- [ ] Connessione a localhost:8080
+- [ ] Connessione a localhost:8844
 - [ ] Menu utente chiaro e informativo
 - [ ] Loop di input dall'utente
 - [ ] Invio richieste al server
@@ -263,7 +299,7 @@ while (true) {
 #### 4.1 Test di Compilazione:
 ```bash
 # Compila entrambi i file
-javac CalcolatriceServer.java CalcolatriceClient.java
+javac -encoding UTF-8 CalcolatriceServer.java CalcolatriceClient.java
 
 # Verifica che non ci siano errori di compilazione
 ```
@@ -409,25 +445,25 @@ java CalcolatriceClient
 ### 🔍 **Comandi Debug Utili:**
 ```bash
 # Verifica porta in uso
-netstat -an | grep 8080
+netstat -an | grep 8844
 
 # Testa connessione manualmente  
-telnet localhost 8080
+telnet localhost 8844
 
 # Monitora connessioni
-ss -tuln | grep 8080
+ss -tanp '( sport = :8844 or dport = :8844 )'
 ```
 
 ### 💬 **FAQ Comuni:**
 
 **Q: Il server non si avvia, errore "Address already in use"**  
-A: La porta 8080 è già occupata. Cambia porta o termina il processo esistente.
+A: La porta 8844 è già occupata. Cambia porta o termina il processo esistente.
 
 **Q: Client non si connette al server**  
 A: Verifica che il server sia avviato e che la porta sia corretta.
 
 **Q: Come gestisco input con spazi nei numeri decimali?**  
-A: Usa `Double.parseDouble()` che gestisce automaticamente i decimali.
+A: Usa il punto decimale, per esempio `2.5 + 1.5`. Normalizza gli spazi tra i tre elementi con `trim().split("\\s+")`; non inserire spazi dentro un numero.
 
 ---
 
@@ -463,3 +499,5 @@ Questa esercitazione ti permetterà di consolidare le competenze sui socket TCP 
 
 *Esercitazione creata per il corso di Sistemi e Reti 3 - ITCS Cannizzaro di Rho*  
 *Anno Scolastico 2025/26*
+
+[Indice del modulo](../../README.md)

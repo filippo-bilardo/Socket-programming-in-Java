@@ -1,55 +1,33 @@
-/**
- * Semplice TCP Server in Java
- *
- * javac TcpServer.java && java TcpServer
- * 
- * author: Filippo Bilardo
- * version: 1.1 - 18/10/25 - aggiunta commenti
- */
-
+/** Server dell'esempio a: una sessione con framing binario Java. */
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
+import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
 public class TcpServer {
-	public static void main(String[] args) throws Exception {
-		
-		int severPort=8765;
-		String clientMsg = "";
-		
-		try {			 
-			// Creazione del socket sul server e ascolto sulla porta
-			ServerSocket serverSocket = new ServerSocket(severPort);
-			System.out.println("Server: in ascolto sulla porta " + severPort);
-
-			// Attesa della connessione con il client
-			Socket clientSocket = serverSocket.accept();
-			
-			// Create input and output streams to read/write data
-			DataInputStream inStream = new DataInputStream(clientSocket.getInputStream());
-			DataOutputStream outStream = new DataOutputStream(clientSocket.getOutputStream());	
-
-			// Scambio di dati tra client e server
-			while(!clientMsg.equals("quit")) {
-				//Lettura dato da stream di rete
-				clientMsg = inStream.readUTF();
-				System.out.println("Server: ricevuto messaggio " + clientMsg );
-				
-				//Invio dati su stream di rete
-				outStream.writeUTF("Echo from server : "         + clientMsg);
-				outStream.flush();
-				System.out.println("Server: invio messaggio "    + clientMsg );
-			}
-
-			// Close resources
-			serverSocket.close();
-			clientSocket.close();
-			inStream.close();
-			outStream.close();
-
-		} catch (Exception e) {
-			System.out.println(e);
-		}
-	}
+    public static void main(String[] args) {
+        int serverPort = args.length > 0 ? Integer.parseInt(args[0]) : 8765;
+        try (ServerSocket server = new ServerSocket(serverPort)) {
+            System.out.println("Server in ascolto sulla porta " + serverPort);
+            try (Socket client = server.accept();
+                 DataInputStream input = new DataInputStream(client.getInputStream());
+                 DataOutputStream output = new DataOutputStream(client.getOutputStream())) {
+                while (true) {
+                    String message = input.readUTF();
+                    System.out.println("Ricevuto: " + message);
+                    output.writeUTF("Echo from server : " + message);
+                    output.flush();
+                    if (message.equals("quit")) {
+                        break;
+                    }
+                }
+            }
+        } catch (EOFException error) {
+            System.out.println("Client disconnesso senza inviare quit.");
+        } catch (IOException error) {
+            System.err.println("Errore server: " + error.getMessage());
+        }
+    }
 }

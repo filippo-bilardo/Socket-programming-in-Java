@@ -26,4 +26,4 @@ Tutti gli esempi di codice sono disponibili nella cartella [`/esempi`](./esempi/
 ## Navigazione
 - [⬅️ Esercitazione Precedente](../01-Introduzione-Networking/README.md)
 - [📑 Torna all'Indice del Corso](../README.md)
-- [➡️ Esercitazione Successiva](../03-Socket-TCP-Fondamenti/README.md)
+- [➡️ Esercitazione Successiva](../03-Socket-TCP/README.md)

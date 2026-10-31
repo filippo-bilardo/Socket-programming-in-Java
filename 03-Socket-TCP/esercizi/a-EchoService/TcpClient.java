@@ -1,67 +1,45 @@
-/**
- * Semplice TCP Client in Java
- * 
- * javac TcpClient.java && java TcpClient 
- * 
- * author: Filippo Bilardo
- * version: 1.1 - 18/10/25 - aggiunta commenti
- */
-
+/** Client dell'esempio a: protocollo binario Java writeUTF/readUTF. */
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
+import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.InetSocketAddress;
 import java.net.Socket;
-//import java.util.Scanner;
+import java.nio.charset.StandardCharsets;
 
 public class TcpClient {
-	public static void main(String[] args) throws Exception {
-		
-		String severAddress="127.0.0.1";  // localhost
-		int severPort=8765;
-		String clientMsg = "";
-		String serverMsg;
-		
-		try {
-			// Create connection to server socket
-			System.out.print("Client: Connessione al server=" + severAddress + ":" + severPort + " ... ");
-			// Create a socket to connect to the server
-			Socket socket = new Socket(severAddress, severPort); 
-			System.out.println("Connected");
+    public static void main(String[] args) {
+        String serverAddress = args.length > 0 ? args[0] : "127.0.0.1";
+        int serverPort = args.length > 1 ? Integer.parseInt(args[1]) : 8765;
 
-			// Create input and output streams to read/write data
-			// Input stream tramite la classe java Scanner per i dati inseriti dall'utente 
-			BufferedReader inUserStream = new BufferedReader(new InputStreamReader(System.in));
-			//Scanner scanner = new Scanner(System.in);
-			// Input stream per i dati provenienti dal socket 
-			DataInputStream inSocketStream = new DataInputStream(socket.getInputStream());
-			// Output stream 
-			DataOutputStream outSocketStream = new DataOutputStream(socket.getOutputStream());
-			
-			while (!clientMsg.equals("quit")) {
-				// Prompt user to enter some text or 'quit'
-				System.out.print("Client: inserisci il messaggio da inviare> ");
-				//clientMsg = scanner.nextLine();
-				clientMsg = inUserStream.readLine();
-
-				// Send the entered text to server
-				System.out.println("Client: invio il messaggio: " + clientMsg);
-				outSocketStream.writeUTF(clientMsg);
-				outSocketStream.flush();
-
-				// Read data from socket input stream
-				serverMsg = inSocketStream.readUTF();
-				System.out.println("Client: ricevuto il messaggio: " + serverMsg);
-			}
-
-			// Close resources
-			outSocketStream.close();
-			inSocketStream.close();
-			inUserStream.close();
-			socket.close();
-			//scanner.close();			
-		} catch (Exception e) {
-			System.out.println(e);
-		}
-	}
+        try (Socket socket = new Socket()) {
+            socket.connect(new InetSocketAddress(serverAddress, serverPort), 5000);
+            socket.setSoTimeout(10000);
+            try (DataInputStream input = new DataInputStream(socket.getInputStream());
+                 DataOutputStream output = new DataOutputStream(socket.getOutputStream());
+                 BufferedReader keyboard = new BufferedReader(
+                         new InputStreamReader(System.in, StandardCharsets.UTF_8))) {
+                System.out.println("Client connesso a " + serverAddress + ":" + serverPort);
+                while (true) {
+                    System.out.print("Messaggio (quit per uscire)> ");
+                    String message = keyboard.readLine();
+                    if (message == null) {
+                        break; // EOF da tastiera: non inviare null a writeUTF.
+                    }
+                    output.writeUTF(message);
+                    output.flush();
+                    System.out.println(input.readUTF());
+                    if (message.equals("quit")) {
+                        break;
+                    }
+                }
+            }
+        } catch (EOFException error) {
+            System.err.println("Il server ha chiuso la connessione.");
+        } catch (IOException error) {
+            System.err.println("Errore client: " + error.getMessage());
+        }
+    }
 }

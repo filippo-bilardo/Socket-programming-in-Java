@@ -50,10 +50,10 @@ try {
 
 #### Chiusura Parziale
 ```java
-// Chiude solo l'output stream (invio)
+// Termina soltanto la direzione di invio, senza chiudere tutto il socket
 socket.shutdownOutput();
 
-// Chiude solo l'input stream (ricezione) 
+// Termina soltanto la direzione di ricezione
 socket.shutdownInput();
 
 // Verifica stato
@@ -75,54 +75,83 @@ while (in.readLine() != null) {
 socket.close(); // Chiusura completa
 ```
 
-### Gestione Risorse con Pool
+### Gestione risorse con pool — approfondimento
+
+Questo helper illustra il ciclo di prestito/restituzione; non è un pool completo
+per produzione. Il servizio deve prevedere sessioni riutilizzabili e il chiamante
+deve aver letto tutta la risposta prima di restituire la connessione. `isClosed()`
+indica la chiusura locale: non verifica lo stato del peer. Una connessione che ha
+dato un errore va chiusa, poi restituita per rimuoverla dal set dei prestiti.
 
 ```java
-public class ConnectionPool {
-    private final Queue<Socket> availableConnections = new ConcurrentLinkedQueue<>();
-    private final Set<Socket> usedConnections = ConcurrentHashMap.newKeySet();
-    
-    public Socket borrowConnection() throws IOException {
-        Socket socket = availableConnections.poll();
-        if (socket == null || socket.isClosed()) {
+import java.io.IOException;
+import java.net.Socket;
+import java.util.ArrayDeque;
+import java.util.HashSet;
+import java.util.Queue;
+import java.util.Set;
+
+public class ConnectionPool implements AutoCloseable {
+    private final Queue<Socket> availableConnections = new ArrayDeque<>();
+    private final Set<Socket> usedConnections = new HashSet<>();
+    private boolean closed;
+
+    public synchronized Socket borrowConnection() throws IOException {
+        if (closed) {
+            throw new IOException("Pool chiuso");
+        }
+        Socket socket;
+        do {
+            socket = availableConnections.poll();
+        } while (socket != null && socket.isClosed());
+        if (socket == null) {
             socket = new Socket("localhost", 8080);
         }
         usedConnections.add(socket);
         return socket;
     }
-    
-    public void returnConnection(Socket socket) {
-        if (socket != null && !socket.isClosed()) {
-            usedConnections.remove(socket);
+
+    public synchronized void returnConnection(Socket socket) {
+        if (socket == null || !usedConnections.remove(socket)) {
+            return;
+        }
+        if (!closed && !socket.isClosed()) {
             availableConnections.offer(socket);
+        } else {
+            try { socket.close(); } catch (IOException error) { /* già in chiusura */ }
         }
     }
-    
-    public void close() {
-        // Chiude tutte le connessioni
-        Stream.concat(availableConnections.stream(), usedConnections.stream())
-              .forEach(socket -> {
-                  try { socket.close(); } catch (IOException e) { }
-              });
+
+    @Override
+    public synchronized void close() {
+        closed = true;
+        for (Socket socket : availableConnections) {
+            try { socket.close(); } catch (IOException error) { /* prosegui il cleanup */ }
+        }
+        for (Socket socket : usedConnections) {
+            try { socket.close(); } catch (IOException error) { /* prosegui il cleanup */ }
+        }
+        availableConnections.clear();
+        usedConnections.clear();
     }
 }
 ```
 
 ## 🔗 Esempi di Riferimento
 
-- [Esempio 01: Gestione Risorse](./esempi/GestioneRisorse.java) - Pattern corretti per cleanup
-- [Esempio 02: Connection Pool](./esempi/ConnectionPool.java) - Pool di connessioni riutilizzabili
+- [Esempio a: chiusura di client e stream](esercizi/a-EchoService/TcpClient.java) - Pattern corretti per cleanup
+- [Approfondimento: pool di thread del server](../04-Miltithread/esempi/ConnectionPoolServer.java) - Pool di connessioni riutilizzabili
 
 ## 💡 Best Practices
 
 - **Try-with-resources**: Sempre quando possibile
 - **Cleanup in finally**: Se non usi try-with-resources
-- **Shutdown graceful**: Usa shutdownOutput() prima della chiusura
-- **Timeout per close**: Evita attese infinite durante chiusura
+- **Half-close**: Usa `shutdownOutput()` quando il protocollo usa EOF per terminare la richiesta e devi ancora leggere la risposta
+- **Timeout**: Imposta un timeout sulle letture che attendono la risposta o la chiusura del peer; `SO_TIMEOUT` non limita `close()`
 - **Pool per performance**: Riusa connessioni quando appropriato
 
 ⚠️ **Errori Comuni**:
-- Non chiudere stream prima del socket
+- Credere che gli stream rimangano utilizzabili dopo `socket.close()`: la chiusura del socket chiude anche gli stream associati
 - Ignorare eccezioni durante la chiusura
 - Non verificare se socket è già chiuso
 - Memory leak per connessioni non chiuse
@@ -130,4 +159,4 @@ public class ConnectionPool {
 ## Navigazione del Corso
 - [📑 Torna all'Indice del Corso](../README.md)
 - [⬅️ Guida Precedente](02-Comunicazione-Dati-TCP.md)
-- [➡️ Esercitazione Successiva](04-Multithreading.md)
+- [➡️ Esercitazione Successiva](../04-Miltithread/04-Multithreading.md)
