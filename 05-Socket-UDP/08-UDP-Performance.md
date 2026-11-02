@@ -76,4 +76,4 @@ I buffer kernel impostati con SO_RCVBUF/SO_SNDBUF sono richieste e possono esser
 - Una receive su un buffer troppo piccolo si completa con i byte rimanenti alla chiamata successiva? **No.**
 - Un risultato su localhost rappresenta la LAN? **No.**
 
-[Indice modulo](README.md) · [Prima: socket UDP](01-Socket-UDP-Fondamenti.md) · [Dopo: uno a molti](../06-Socket-Multicast-Broadcast/README.md)
+[Indice modulo](README.md) · [Prima: socket UDP](07-Socket-UDP-Fondamenti.md) · [Dopo: uno a molti](../06-Socket-Multicast-Broadcast/README.md)

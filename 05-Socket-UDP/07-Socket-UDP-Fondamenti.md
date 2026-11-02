@@ -1,6 +1,6 @@
 # Socket UDP in Java
 
-Prerequisiti: [protocollo UDP](00-Il-protocollo-UDP.md), JDK 11+ e un terminale. Le classi principali sono [DatagramSocket](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/net/DatagramSocket.html) e [DatagramPacket](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/net/DatagramPacket.html).
+Prerequisiti: [protocollo UDP](06-Il-protocollo-UDP.md), JDK 11+ e un terminale. Le classi principali sono [DatagramSocket](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/net/DatagramSocket.html) e [DatagramPacket](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/net/DatagramPacket.html).
 
 ## Un mittente e un ricevitore
 
@@ -81,4 +81,4 @@ L'ultimo comando richiede accesso al DNS indicato; in laboratorio il docente pu�
 5. Avvia un client senza servizio, osservando timeout/ICMP senza attese infinite.
 6. Arresta il server mentre attende dati e verifica che termini.
 
-[Indice modulo](README.md) · [Prestazioni](02-UDP-Performance.md) · [Esercizi](esercizi/README.md)
+[Indice modulo](README.md) · [Prestazioni](08-UDP-Performance.md) · [Esercizi](esercizi/README.md)

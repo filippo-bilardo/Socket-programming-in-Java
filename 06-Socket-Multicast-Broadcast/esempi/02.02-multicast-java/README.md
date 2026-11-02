@@ -17,6 +17,6 @@ Ricevitore: gruppo, porta, conteggio opzionale. Mittente: gruppo, porta, interva
 
 Il payload è `MULTICAST|Messaggio #N|Timestamp: T|TTL: X` in UTF-8, massimo 1024 byte. TTL 0 è un valore valido per prove locali dove supportato: non sostituirlo con il default usando un'espressione come `valore || default`. La porta deve essere 1..65535, l'intervallo positivo e il TTL 0..255. Il TTL è un limite di hop e non indica continente, regione o organizzazione.
 
-Imposta MULTICAST_IFACE all'IPv4 dell'interfaccia locale scelta, come nella [guida](../../01-Broadcast-Multicast.md). Inviare non richiede aderire al gruppo; per ricevere serve join sulla stessa interfaccia configurata nel laboratorio. Le implementazioni Java e Node.js della famiglia configurabile sono interoperabili: prova entrambe le direzioni e due ricevitori sulla stessa porta/gruppo.
+Imposta MULTICAST_IFACE all'IPv4 dell'interfaccia locale scelta, come nella [guida](../../09-Broadcast-Multicast.md). Inviare non richiede aderire al gruppo; per ricevere serve join sulla stessa interfaccia configurata nel laboratorio. Le implementazioni Java e Node.js della famiglia configurabile sono interoperabili: prova entrambe le direzioni e due ricevitori sulla stessa porta/gruppo.
 
 [Indice esempi](../README.md) · [Esercizi](../../esercizi/README.md)

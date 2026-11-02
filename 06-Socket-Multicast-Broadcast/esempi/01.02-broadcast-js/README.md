@@ -18,4 +18,4 @@ Il destinatario può essere il broadcast effettivo della subnet. Puoi usare 127.
 
 Non chiamare “consegnato a tutti” un datagramma solo perché la send è riuscita. Per una prova fra host controlla la stessa porta e la rete locale effettiva. Mantieni un solo ricevitore broadcast per host/porta: non è il test dei gruppi multicast con più membri locali.
 
-[Indice esempi](../README.md) · [Guida](../../01-Broadcast-Multicast.md)
+[Indice esempi](../README.md) · [Guida](../../09-Broadcast-Multicast.md)

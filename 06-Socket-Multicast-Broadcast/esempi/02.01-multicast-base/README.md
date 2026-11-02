@@ -1,6 +1,6 @@
 # Multicast essenziale — Java e Node.js
 
-Tutte le versioni usano per default 239.255.0.1:9876, TTL 1, payload UTF-8 di massimo 1024 byte. Il mittente non fa join; il ricevitore sì. La selezione di MULTICAST_IFACE è spiegata nella [guida](../../01-Broadcast-Multicast.md).
+Tutte le versioni usano per default 239.255.0.1:9876, TTL 1, payload UTF-8 di massimo 1024 byte. Il mittente non fa join; il ricevitore sì. La selezione di MULTICAST_IFACE è spiegata nella [guida](../../09-Broadcast-Multicast.md).
 
 ```sh
 javac -encoding UTF-8 Sender.java Receiver.java MulticastSupport.java _Sender.java _Receiver.java

@@ -16,7 +16,7 @@ java SimpleDNSResolver localhost
 
 - [SimpleDNSResolver](SimpleDNSResolver.java) usa la risoluzione del sistema, non costruisce query DNS.
 - [SimpleDNSQuery](SimpleDNSQuery.java): `java SimpleDNSQuery example.com 8.8.8.8 53`. La destinazione DNS è configurabile; occorre un server raggiungibile. Il codec controlla header e limiti della risposta e cerca un record A, ma non implementa un resolver completo o il fallback TCP.
-- [HighPerformanceUDPServer](HighPerformanceUDPServer.java): `java HighPerformanceUDPServer server 8888`, poi `java HighPerformanceUDPServer loadtest localhost 8888 2 20 3`. Sono worker, rate totale desiderato e durata; il test termina anche senza risposte valide. Vedi [metodo e limiti delle misure](../02-UDP-Performance.md).
+- [HighPerformanceUDPServer](HighPerformanceUDPServer.java): `java HighPerformanceUDPServer server 8888`, poi `java HighPerformanceUDPServer loadtest localhost 8888 2 20 3`. Sono worker, rate totale desiderato e durata; il test termina anche senza risposte valide. Vedi [metodo e limiti delle misure](../08-UDP-Performance.md).
 
 Le porte 9876, 9999 e 8888 sono esempi di laboratorio. Non avviare due server unicast sulla stessa porta dello stesso host. Per distinguere i risultati, cambia la porta su entrambi i lati.
 

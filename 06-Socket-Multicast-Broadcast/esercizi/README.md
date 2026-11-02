@@ -1,6 +1,6 @@
 # Esercizi — Multicast e broadcast
 
-Completa prima [UDP unicast](../../05-Socket-UDP/esercizi/README.md) e leggi [gruppi e interfacce](../01-Broadcast-Multicast.md).
+Completa prima [UDP unicast](../../05-Socket-UDP/esercizi/README.md) e leggi [gruppi e interfacce](../09-Broadcast-Multicast.md).
 
 | Esercizio | Obiettivo | Materiale |
 | --- | --- | --- |

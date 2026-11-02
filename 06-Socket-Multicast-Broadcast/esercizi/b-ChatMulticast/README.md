@@ -26,7 +26,7 @@ javac -encoding UTF-8 MulticastChat.java MulticastSupport.java
 java MulticastChat
 ```
 
-Il comando di avvio funziona come chat solo dopo il completamento del TODO. Prendi spunto dall'[esercizio a](../a-UDPMulticast/README.md) e dalle regole della [guida multicast](../../01-Broadcast-Multicast.md), non da vecchie cartelle ES04.
+Il comando di avvio funziona come chat solo dopo il completamento del TODO. Prendi spunto dall'[esercizio a](../a-UDPMulticast/README.md) e dalle regole della [guida multicast](../../09-Broadcast-Multicast.md), non da vecchie cartelle ES04.
 
 Prova due istanze, nomi uguali con identità diverse, messaggi accentati, corto→lungo, una sequenza di invii, uscita di un utente mentre l'altro continua, EOF console e dati malformati. Perdita e riordino sono possibili: registra le sequenze osservate invece di dichiarare la chat affidabile.
 

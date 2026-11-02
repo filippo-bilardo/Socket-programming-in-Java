@@ -1,6 +1,6 @@
 # c — Discovery broadcast con risposta unicast
 
-Progetta uno scanner che cerchi soltanto i responder dell'applicazione di laboratorio. Leggi la [guida discovery](../../02-Discovery.md), poi confronta la soluzione con [NetworkDiscoveryBroadcast.java](../../esempi/NetworkDiscoveryBroadcast.java).
+Progetta uno scanner che cerchi soltanto i responder dell'applicazione di laboratorio. Leggi la [guida discovery](../../10-Discovery.md), poi confronta la soluzione con [NetworkDiscoveryBroadcast.java](../../esempi/NetworkDiscoveryBroadcast.java).
 
 ## Requisiti
 

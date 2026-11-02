@@ -86,4 +86,4 @@ UDP può perdere datagrammi anche in multicast. Non è corretto scrivere “tutt
 
 Riferimenti: [MulticastSocket](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/net/MulticastSocket.html), [Node dgram](https://nodejs.org/api/dgram.html), [RFC 1112](https://www.rfc-editor.org/rfc/rfc1112.html), [RFC 2365](https://www.rfc-editor.org/rfc/rfc2365.html).
 
-[Indice modulo](README.md) · [Discovery](02-Discovery.md) · [Esercizi](esercizi/README.md)
+[Indice modulo](README.md) · [Discovery](10-Discovery.md) · [Esercizi](esercizi/README.md)

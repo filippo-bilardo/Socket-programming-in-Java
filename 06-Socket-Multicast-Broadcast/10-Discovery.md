@@ -60,7 +60,7 @@ La porta 8080 è la porta **annunciata**, non quella usata per il discovery. L'a
 java ServiceDiscoveryMulticast both WebLab HTTP 8080 6
 ```
 
-Per osservare la scadenza, lascia attivo il discoverer e arresta l'annunciatore; attendi oltre 15 secondi. Imposta MULTICAST_IFACE come descritto nella [guida multicast](01-Broadcast-Multicast.md). Il ricevitore chiude il socket per sbloccare receive e arresta il lavoro periodico alla chiusura.
+Per osservare la scadenza, lascia attivo il discoverer e arresta l'annunciatore; attendi oltre 15 secondi. Imposta MULTICAST_IFACE come descritto nella [guida multicast](09-Broadcast-Multicast.md). Il ricevitore chiude il socket per sbloccare receive e arresta il lavoro periodico alla chiusura.
 
 ## Limiti e consegna
 
@@ -68,4 +68,4 @@ Sono protocolli didattici personalizzati, non implementazioni di mDNS/DNS-SD. Gl
 
 Consegna cattura e tabella con: richiesta/annuncio, IP sorgente/destinazione, porte, identificativo e istante di ricezione. Distingui ciò che hai osservato da ciò che il protocollo non può dimostrare.
 
-[Indice modulo](README.md) · [Broadcast e multicast](01-Broadcast-Multicast.md) · [Esercizio discovery](esercizi/c-DiscoveryBroadcast/README.md)
+[Indice modulo](README.md) · [Broadcast e multicast](09-Broadcast-Multicast.md) · [Esercizio discovery](esercizi/c-DiscoveryBroadcast/README.md)

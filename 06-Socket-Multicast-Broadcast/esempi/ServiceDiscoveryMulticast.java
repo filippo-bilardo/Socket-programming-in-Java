@@ -1,3 +1,18 @@
+/**
+ * 06-Socket-Multicast-Broadcast/esempi/ServiceDiscoveryMulticast.java
+ *
+ * Obiettivo: Annunciare servizi e mantenere una cache che scade quando mancano nuovi annunci.
+ * Protocollo: ANNOUNCE|nome|tipo|porta, campi codificati; gruppo 239.255.0.2:8890, TTL 1.
+ * Parametri: discoverer [secondi], announcer <nome> <tipo> <porta> [secondi], oppure both ...
+ *
+ * Compilazione dalla cartella del file: javac -encoding UTF-8 *.java
+ * Avvio:
+ *   java ServiceDiscoveryMulticast discoverer
+ *   java ServiceDiscoveryMulticast announcer WebLab HTTP 8080
+ *
+ * Annunci ogni 5 secondi; scadenza dopo oltre 15 secondi misurati localmente. Non avvia il servizio annunciato.
+ */
+
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
@@ -9,11 +24,13 @@ public class ServiceDiscoveryMulticast {
     private static final String GROUP = "239.255.0.2";
     private static final int PORT = 8890;
     private static final long EXPIRY_NANOS = TimeUnit.SECONDS.toNanos(15);
+    // Una voce della cache è uno snapshot immutabile; un nuovo annuncio crea una nuova voce con età locale aggiornata.
     public static class ServiceInfo {
         private final String name, type;
         private final InetAddress address;
         private final int port;
         // Il mittente non può scegliere l'età nella cache del ricevitore.
+        // nanoTime misura durate locali: evita dipendenze dall’orologio del mittente e da cambi dell’ora di sistema.
         private final long receivedAt = System.nanoTime();
         public ServiceInfo(String name, String type, InetAddress address, int port) {
             if (name.isBlank() || type.isBlank() || name.length() > 64 || type.length() > 64 || port < 1 || port > 65535)
@@ -25,10 +42,13 @@ public class ServiceDiscoveryMulticast {
         public InetAddress getAddress() { return address; }
         public int getPort() { return port; }
         public boolean isExpired() { return System.nanoTime() - receivedAt > EXPIRY_NANOS; }
+        // Nome e tipo sono preceduti dalla lunghezza per evitare collisioni quando contengono separatori.
         public String key() { return name.length() + ":" + name + type.length() + ":" + type + "|" + address.getHostAddress() + "|" + port; }
+        // URL encoding rende non ambiguo il protocollo ANNOUNCE con campi separati da |.
         public String toAnnouncementString() {
             return "ANNOUNCE|" + URLEncoder.encode(name, StandardCharsets.UTF_8) + "|" + URLEncoder.encode(type, StandardCharsets.UTF_8) + "|" + port;
         }
+        // La sorgente è l’IP del datagramma ricevuto, non un indirizzo dichiarato dal mittente nel testo.
         public static ServiceInfo parse(String text, InetAddress sender) {
             String[] parts = text.split("\\|", -1);
             if (parts.length != 4 || !parts[0].equals("ANNOUNCE")) return null;
@@ -38,6 +58,7 @@ public class ServiceDiscoveryMulticast {
         @Override public String toString() { return name + " (" + type + ") @ " + address.getHostAddress() + ":" + port; }
     }
     public static class ServiceAnnouncer implements AutoCloseable {
+        // Le modifiche ai servizi sono rare; una copia alla scrittura consente iterazioni stabili nel task periodico.
         private final List<ServiceInfo> services = new CopyOnWriteArrayList<>();
         private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
         private MulticastSocket socket;
@@ -48,10 +69,12 @@ public class ServiceDiscoveryMulticast {
                 socket.setNetworkInterface(MulticastSupport.networkInterface());
                 socket.setTimeToLive(1); socket.setOption(StandardSocketOptions.IP_MULTICAST_LOOP, true);
                 InetAddress group = MulticastSupport.group(GROUP);
+                // Il primo annuncio parte subito; quelli successivi ripetono la presenza ogni cinque secondi.
                 executor.scheduleAtFixedRate(() -> {
                     for (ServiceInfo service : services) {
                         byte[] data = service.toAnnouncementString().getBytes(StandardCharsets.UTF_8);
                         try { socket.send(new DatagramPacket(data, data.length, group, PORT)); }
+                        // Non segnalare come guasto di invio l’errore atteso quando close ha già chiuso il socket.
                         catch (IOException e) { if (!socket.isClosed()) System.err.println(e.getMessage()); }
                     }
                 }, 0, 5, TimeUnit.SECONDS);
@@ -62,6 +85,7 @@ public class ServiceDiscoveryMulticast {
         @Override public void close() { executor.shutdownNow(); if (socket != null) socket.close(); }
     }
     public static class ServiceDiscoverer implements AutoCloseable {
+        // Ricezione e pulizia lavorano in thread diversi: la cache deve supportare accessi concorrenti.
         private final ConcurrentMap<String, ServiceInfo> services = new ConcurrentHashMap<>();
         private final ScheduledExecutorService cleanup = Executors.newSingleThreadScheduledExecutor();
         private volatile boolean running = true;
@@ -71,6 +95,7 @@ public class ServiceDiscoveryMulticast {
             InetAddress group = MulticastSupport.group(GROUP);
             NetworkInterface ni = MulticastSupport.networkInterface();
             socket = MulticastSupport.receiver(group, PORT, ni);
+            // Un thread dedicato può restare bloccato in receive senza fermare il task che scade le voci.
             receiver = new Thread(() -> {
                 byte[] data = new byte[1401];
                 try {
@@ -80,6 +105,7 @@ public class ServiceDiscoveryMulticast {
                         if (packet.getLength() > 1400) continue;
                         ServiceInfo service = ServiceInfo.parse(new String(data, 0, packet.getLength(), StandardCharsets.UTF_8), packet.getAddress());
                         if (service != null) {
+                            // Ogni annuncio valido rinnova la voce; nome uguale su host o porte diversi identifica istanze distinte.
                             services.put(service.key(), service);
                             System.out.println("SERVIZIO " + service);
                         }
@@ -88,8 +114,10 @@ public class ServiceDiscoveryMulticast {
                 finally { socket.close(); }
             }, "MulticastDiscovery");
             receiver.start();
+            // La scadenza viene controllata ogni secondo; i quindici secondi sono misurati dall’ultimo annuncio ricevuto.
             cleanup.scheduleAtFixedRate(() -> {
                 for (Map.Entry<String, ServiceInfo> entry : services.entrySet()) {
+                    // La rimozione condizionata alla stessa istanza non cancella un aggiornamento appena ricevuto.
                     if (entry.getValue().isExpired() && services.remove(entry.getKey(), entry.getValue()))
                         System.out.println("SCADUTO " + entry.getValue());
                 }
@@ -101,10 +129,12 @@ public class ServiceDiscoveryMulticast {
         @Override public void close() {
             running = false; cleanup.shutdownNow();
             if (socket != null) socket.close(); // Chiudere il socket sblocca receive.
+            // Attende il ricevitore dopo la chiusura del socket; evita di attendere il thread corrente stesso.
             if (receiver != null && receiver != Thread.currentThread()) try { receiver.join(1500); }
             catch (InterruptedException e) { Thread.currentThread().interrupt(); }
         }
     }
+    // Legge i parametri della console e avvia il ruolo previsto da questa classe.
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
             System.out.println("java ServiceDiscoveryMulticast discoverer [secondi] | announcer <nome> <tipo> <porta> [secondi] | both <nome> <tipo> <porta> [secondi]");
@@ -116,12 +146,14 @@ public class ServiceDiscoveryMulticast {
         long seconds = mode.equals("discoverer") ? (args.length > 1 ? Long.parseLong(args[1]) : 0) : (args.length > 4 ? Long.parseLong(args[4]) : 0);
         if (seconds < 0) throw new IllegalArgumentException("Durata non negativa");
         try (ServiceDiscoverer discoverer = new ServiceDiscoverer(); ServiceAnnouncer announcer = new ServiceAnnouncer()) {
+            // Ctrl+C e fine della durata di prova convergono sulla stessa chiusura delle risorse.
             Runtime.getRuntime().addShutdownHook(new Thread(() -> { discoverer.close(); announcer.close(); }));
             if (!mode.equals("announcer")) discoverer.start();
             if (!mode.equals("discoverer")) {
                 announcer.addService(new ServiceInfo(args[1], args[2], InetAddress.getLoopbackAddress(), Integer.parseInt(args[3])));
                 announcer.start(); // L'indirizzo usato nella cache è quello sorgente del datagramma.
             }
+            // Zero mantiene il servizio attivo; una durata positiva consente una prova finita e ripetibile.
             if (seconds == 0) new CountDownLatch(1).await();
             else TimeUnit.SECONDS.sleep(seconds);
         }

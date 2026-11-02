@@ -4,12 +4,6 @@
 
 Nella comunicazione socket tradizionale, un server gestisce un client per volta bloccando l'esecuzione durante l'I/O. Il multithreading consente di gestire **molteplici client contemporaneamente**, mantenendo la responsività dell'applicazione e massimizzando l'utilizzo delle risorse di sistema.
 
-Per compilare le classi riportate, salva ogni classe pubblica nel file omonimo e aggiungi gli import `java.io.*` e `java.net.*`. Il contatore degli identificativi è incrementato dal solo thread di accept, prima di avviare il gestore; non è un contatore condiviso aggiornato dai worker.
-
-Il modello con un nuovo thread per client è introduttivo: il numero di connessioni non è limitato. Il capitolo avanzato mostra come limitare worker e coda. La chiusura dei socket e il timeout restano necessari anche con un pool.
-
-Questa guida approfondisce i concetti, le strategie e le implementazioni per una comunicazione socket robusta e scalabile.
-
 ---
 
 ## Capitolo 1: Fondamenti del Multithreading nei Socket
@@ -116,10 +110,11 @@ public class MultiThreadedServer {
         System.out.println("Server avviato sulla porta " + PORT);
     }
 
-    public void start() {
+    public void runServer() {
         while (true) {
             try {
                 Socket clientSocket = serverSocket.accept();
+                System.out.println("Nuovo client connesso: " + clientSocket.getRemoteSocketAddress());
                 new Thread(new ClientHandler(clientSocket)).start();
             } catch (IOException e) {
                 System.err.println("Errore nell'accettare connessione: " + e.getMessage());
@@ -128,7 +123,7 @@ public class MultiThreadedServer {
     }
 
     public static void main(String[] args) throws IOException {
-        new MultiThreadedServer().start();
+        new MultiThreadedServer().runServer();
     }
 }
 ```

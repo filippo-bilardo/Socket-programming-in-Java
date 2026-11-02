@@ -15,7 +15,7 @@ Mittente: porta, intervallo in ms, indirizzo, conteggio opzionale (0 = senza lim
 
 ## Multicast
 
-Imposta MULTICAST_IFACE se necessario, seguendo la [guida](../01-Broadcast-Multicast.md). Avvia i ricevitori prima del mittente. Gli argomenti delle due famiglie sono diversi e sono indicati nei rispettivi README.
+Imposta MULTICAST_IFACE se necessario, seguendo la [guida](../09-Broadcast-Multicast.md). Avvia i ricevitori prima del mittente. Gli argomenti delle due famiglie sono diversi e sono indicati nei rispettivi README.
 
 | Cartella | Ricevitore | Mittente |
 | --- | --- | --- |
@@ -37,6 +37,6 @@ javac -encoding UTF-8 NetworkDiscoveryBroadcast.java ServiceDiscoveryMulticast.j
 - Multicast: `java ServiceDiscoveryMulticast discoverer`, poi `java ServiceDiscoveryMulticast announcer WebLab HTTP 8080`. Gruppo 239.255.0.2:8890, annunci ogni 5 s, scadenza locale dopo oltre 15 s senza annunci. L'annunciatore non avvia un server HTTP.
 - Prova finita: `java ServiceDiscoveryMulticast both WebLab HTTP 8080 6`.
 
-La [guida discovery](../02-Discovery.md) specifica formato, correlazione delle risposte e identità delle istanze.
+La [guida discovery](../10-Discovery.md) specifica formato, correlazione delle risposte e identità delle istanze.
 
 [Esercizi](../esercizi/README.md) · [Indice modulo](../README.md)

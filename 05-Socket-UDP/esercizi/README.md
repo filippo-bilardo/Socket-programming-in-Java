@@ -1,6 +1,6 @@
 # Esercizi — UDP unicast
 
-JDK 11+, [protocollo UDP](../00-Il-protocollo-UDP.md) e [socket Java](../01-Socket-UDP-Fondamenti.md). Procedi nell'ordine:
+JDK 11+, [protocollo UDP](../06-Il-protocollo-UDP.md) e [socket Java](../07-Socket-UDP-Fondamenti.md). Procedi nell'ordine:
 
 | Esercizio | Competenze | Porta predefinita |
 | --- | --- | --- |

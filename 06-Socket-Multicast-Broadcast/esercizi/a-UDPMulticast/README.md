@@ -4,7 +4,7 @@ Realizza un mittente che invia un datagramma UTF-8 a 239.255.0.1:19876 e due ric
 
 ## Avvio del riferimento
 
-[Sender.java](Sender.java), [Receiver.java](Receiver.java) e [MulticastSupport.java](MulticastSupport.java) sono una soluzione minima. Implementa prima la tua versione. La variabile MULTICAST_IFACE e i comandi per individuarla sono nella [guida](../../01-Broadcast-Multicast.md).
+[Sender.java](Sender.java), [Receiver.java](Receiver.java) e [MulticastSupport.java](MulticastSupport.java) sono una soluzione minima. Implementa prima la tua versione. La variabile MULTICAST_IFACE e i comandi per individuarla sono nella [guida](../../09-Broadcast-Multicast.md).
 
 ```sh
 javac -encoding UTF-8 Sender.java Receiver.java MulticastSupport.java

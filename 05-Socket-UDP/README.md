@@ -4,10 +4,10 @@ Datagrammi unicast, richieste/risposte, timeout, codifica e limiti dei messaggi.
 
 ## Percorso
 
-1. [Il protocollo UDP](00-Il-protocollo-UDP.md): header, confini dei messaggi, perdita, duplicati e confronto con TCP.
-2. [Socket UDP in Java](01-Socket-UDP-Fondamenti.md): DatagramSocket/DatagramPacket, echo e DNS.
+1. [Il protocollo UDP](06-Il-protocollo-UDP.md): header, confini dei messaggi, perdita, duplicati e confronto con TCP.
+2. [Socket UDP in Java](07-Socket-UDP-Fondamenti.md): DatagramSocket/DatagramPacket, echo e DNS.
 3. [Esempi e comandi](esempi/README.md): Java e Node.js con protocolli compatibili.
-4. [Misurare prestazioni e perdita](02-UDP-Performance.md): buffer, DatagramChannel, RTT e benchmark limitato.
+4. [Misurare prestazioni e perdita](08-UDP-Performance.md): buffer, DatagramChannel, RTT e benchmark limitato.
 5. [Esercizi a, b e c](esercizi/README.md): invio/ricezione, echo e Daytime.
 
 JDK 11+; Node.js è facoltativo per le prove fra linguaggi. Tutti gli esempi Java usano solo la libreria standard; quelli Node.js solo API native, senza npm install. Compila con `javac -encoding UTF-8` nella cartella del singolo esempio, perché nomi uguali in cartelle diverse indicano programmi diversi.

@@ -69,9 +69,19 @@ ScheduledExecutorService scheduled = Executors.newScheduledThreadPool(5);
 
 ## Capitolo 2: Sincronizzazione e Risorse Condivise
 
+Quando più thread lavorano contemporaneamente sugli stessi dati, possono comparire problemi diversi:
+
+- **Race condition:** il risultato dipende dall'ordine, non prevedibile, con cui i thread eseguono le operazioni.
+- **Perdita di aggiornamenti:** due thread leggono lo stesso valore e poi lo aggiornano; l'ultimo a scrivere sovrascrive il lavoro dell'altro.
+- **Visibilità:** un thread può non osservare subito una modifica eseguita da un altro, se l'accesso non è coordinato correttamente.
+- **Incoerenza dei dati:** più valori che devono rispettare una relazione possono essere osservati o modificati solo in parte.
+- **Contesa e deadlock:** la sincronizzazione può rallentare i thread; lock acquisiti in ordini incompatibili possono bloccarli per sempre.
+
+La sincronizzazione protegge quindi non solo una singola variabile, ma anche le invarianti che devono rimanere vere. Va applicata agli accessi concorrenti in lettura e scrittura, scegliendo con attenzione la porzione di codice da proteggere.
+
 ### 2.1 Il Problema della Race Condition
 
-Quando più thread accedono a una risorsa condivisa:
+Una race condition si verifica quando il risultato di un'operazione dipende dall'interleaving dei thread. Anche se `count++` sembra un'istruzione singola, in realtà comporta tre passaggi: leggere `count`, calcolare il nuovo valore e scriverlo. Due thread possono quindi leggere entrambi lo stesso valore e perdere un incremento.
 
 ```java
 // PROBLEMA: Accesso non sincronizzato
@@ -88,7 +98,13 @@ public class UnsafeCounter {
 }
 ```
 
+Per esempio, se `count` vale `0`, il thread A e il thread B possono leggere entrambi `0`, calcolare `1` e scrivere `1`: il valore finale sarà `1` invece di `2`. Il problema non si presenta necessariamente a ogni esecuzione, perciò può essere difficile da riprodurre. Anche `getCount()` deve essere coordinato con le scritture: altrimenti il chiamante non ha una garanzia di osservare il valore aggiornato.
+
 ### 2.2 Soluzione con Synchronization
+
+La parola chiave `synchronized` fa acquisire al thread il monitor dell'oggetto prima di entrare nel metodo e lo rilascia quando esce, anche se si verifica un'eccezione. Un solo thread alla volta può entrare in una sezione protetta dallo stesso monitor. Sincronizzare anche `getCount()` assicura che lettura e scrittura usino lo stesso monitor, garantendo coordinamento e visibilità.
+
+La protezione funziona solo se tutti gli accessi concorrenti al dato rispettano lo stesso lock. Inoltre, sezioni sincronizzate troppo ampie causano attesa e riducono la concorrenza. Evitare di acquisire più lock in ordini diversi: per esempio, A prende il lock X e attende Y mentre B prende Y e attende X; entrambi restano bloccati (deadlock).
 
 ```java
 public class SafeCounter {
@@ -106,6 +122,8 @@ public class SafeCounter {
 ```
 
 ### 2.3 Lock Espliciti (ReentrantLock)
+
+`ReentrantLock` offre un controllo più flessibile, ma richiede di rilasciare il lock esplicitamente. Il blocco `finally` è essenziale: senza di esso, un'eccezione potrebbe lasciare il lock acquisito e impedire agli altri thread di proseguire. Anche con i lock espliciti valgono i rischi di contesa e deadlock.
 
 ```java
 import java.util.concurrent.locks.ReentrantLock;
@@ -135,6 +153,8 @@ public class CounterWithLock {
 ```
 
 ### 2.4 Esempio Pratico: Server con Statistiche Condivise
+
+Le statistiche condividono un'unica sezione critica: `totalConnections` e `activeConnections` vengono aggiornate insieme, così una stampa non legge uno stato intermedio. Tutti i metodi che leggono o modificano queste variabili devono usare `statisticsLock`. In un server reale, inoltre, la disconnessione va registrata anche se la gestione della connessione termina con un'eccezione, e il contatore delle connessioni attive non deve scendere sotto zero.
 
 ```java
 public class ServerWithStatistics {

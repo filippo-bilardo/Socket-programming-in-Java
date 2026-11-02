@@ -27,4 +27,4 @@ I parametri del mittente sono host, porta e messaggio; quelli del ricevitore son
 
 Prova un messaggio accentato, uno vuoto e il limite di 1024 byte. Il ricevitore Java usa un buffer con un byte aggiuntivo per riconoscere messaggi oltre il massimo; quello Node verifica la lunghezza del Buffer ricevuto.
 
-[Indice esempi](../README.md) · [Fondamenti](../../01-Socket-UDP-Fondamenti.md)
+[Indice esempi](../README.md) · [Fondamenti](../../07-Socket-UDP-Fondamenti.md)
