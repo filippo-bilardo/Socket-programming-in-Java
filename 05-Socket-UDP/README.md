@@ -1,112 +1,23 @@
-# Modulo 05: Socket UDP
+# Modulo 05 — Socket UDP
 
-## 📝 Descrizione
-Questo modulo approfondisce l'utilizzo dei **socket UDP** in Java, coprendo dalle basi ai pattern avanzati per comunicazioni ad alta velocità. UDP è ideale per applicazioni che richiedono velocità e possono tollerare perdite occasionali di pacchetti.
+Datagrammi unicast, richieste/risposte, timeout, codifica e limiti dei messaggi. Dopo la comunicazione TCP e i server multithread, studia le differenze di un trasporto senza stream e senza garanzia di consegna.
 
-## 🎯 Obiettivi di Apprendimento
-Al termine di questo modulo sarete in grado di:
-- ✅ Implementare client e server UDP efficienti
-- ✅ Utilizzare broadcast e multicast per comunicazioni uno-a-molti
-- ✅ Ottimizzare performance per applicazioni real-time
-- ✅ Implementare sistemi di service discovery
-- ✅ Gestire reliability in ambiente connectionless
+## Percorso
 
-## 📚 Contenuti Teorici
+1. [Il protocollo UDP](00-Il-protocollo-UDP.md): header, confini dei messaggi, perdita, duplicati e confronto con TCP.
+2. [Socket UDP in Java](01-Socket-UDP-Fondamenti.md): DatagramSocket/DatagramPacket, echo e DNS.
+3. [Esempi e comandi](esempi/README.md): Java e Node.js con protocolli compatibili.
+4. [Misurare prestazioni e perdita](02-UDP-Performance.md): buffer, DatagramChannel, RTT e benchmark limitato.
+5. [Esercizi a, b e c](esercizi/README.md): invio/ricezione, echo e Daytime.
 
-0. [Il protocollo UDP](00-Il-protocollo-UDP.md)
-### [1. Socket UDP - Fondamenti](01-Socket-UDP-Fondamenti.md)
-- Caratteristiche del protocollo UDP
-- API DatagramSocket e DatagramPacket
-- Implementazione client/server base
-- Gestione errori e timeout
-- Best practices per UDP
+JDK 11+; Node.js è facoltativo per le prove fra linguaggi. Tutti gli esempi Java usano solo la libreria standard; quelli Node.js solo API native, senza npm install. Compila con `javac -encoding UTF-8` nella cartella del singolo esempio, perché nomi uguali in cartelle diverse indicano programmi diversi.
 
-### [2. Broadcast e Multicast](02-Broadcast-Multicast.md)
-- Comunicazioni uno-a-molti
-- Broadcast limitato e diretto
-- Multicast con MulticastSocket
-- Service discovery patterns
-- Configurazione TTL e interfacce
+## Cosa verificare
 
-### [3. Ottimizzazione Performance](03-UDP-Performance.md)
-- Buffer management e pooling
-- Single-threaded vs multi-threaded
-- Metriche e monitoring real-time
-- System-level tuning
-- Load testing e benchmarking
+Una send riuscita non prova la consegna. Il timeout indica esito non noto. Il payload vuoto è valido; un buffer troppo piccolo tronca il datagramma. Gli esempi testuali dichiarano un limite in byte e usano UTF-8. Prova messaggi accentati, payload vuoti, limite massimo, richieste da più client e server non disponibile.
 
-## 🎯 Esempi Pratici
+Le misure su localhost non descrivono automaticamente una LAN. I risultati del benchmark devono indicare configurazione, rate desiderato ed effettivo, risposte valide e RTT, senza soglie garantite.
 
-### 📁 Esempi Base
-- **EchoUDP.java** - Echo server/client UDP semplice (dal Modulo 03)
+Broadcast, multicast e discovery sono raccolti nel [modulo 06](../06-Socket-Multicast-Broadcast/README.md); non sono richiesti per svolgere gli esercizi di questo modulo.
 
-### 📁 Esempi Avanzati
-- **ServiceDiscoveryMulticast.java** - Sistema discovery servizi via multicast
-- **HighPerformanceUDPServer.java** - Server UDP ad alta performance con monitoring
-- **NetworkDiscoveryBroadcast.java** - Discovery dispositivi di rete via broadcast
-
-> **💡 Nota:** Compila ed esegui gli esempi per sperimentare con i concetti
-
-## 🔧 Esercitazioni Pratiche
-
-### Esercizio 1: Chat Multicast
-Implementa un sistema di chat che utilizza multicast UDP per permettere comunicazione di gruppo.
-
-**Requisiti:**
-- Gruppi multipli (canali)
-- Join/leave dinamico
-- Heartbeat per presenza utenti
-- Interfaccia console interattiva
-
-### Esercizio 2: File Sharing P2P
-Crea un sistema di condivisione file peer-to-peer usando UDP per discovery e metadata.
-
-**Requisiti:**
-- Discovery automatico peers
-- Catalog condivisione file
-- Transfer via TCP (reliability)
-- Load balancing su peer multipli
-
-### Esercizio 3: Real-time Metrics
-Sviluppa un sistema di monitoraggio che raccoglie metriche via UDP multicast.
-
-**Requisiti:**
-- Agent di raccolta dati
-- Aggregazione real-time
-- Dashboard metriche
-- Alerting soglie
-
-## 🧪 Test e Validazione
-
-### Test di Performance
-```bash
-# Test throughput UDP
-java HighPerformanceUDPServer server 8888
-java HighPerformanceUDPServer loadtest localhost 8888 4 10000 60
-
-# Test service discovery
-java ServiceDiscoveryMulticast announcer MyService HTTP 8080 &
-java ServiceDiscoveryMulticast discoverer
-
-# Test network scanning
-java NetworkDiscoveryBroadcast respond &
-java NetworkDiscoveryBroadcast scan
-```
-
-### Metriche di Successo
-- **Throughput**: >50K pps su hardware standard
-- **Latency**: <1ms per processing singolo pacchetto
-- **Discovery Time**: <5s per trovare servizi locali
-- **Reliability**: <1% packet loss in LAN
-
-## 🔗 Collegamenti
-- **Modulo Precedente:** [04 - Server TCP multithread](../04-Miltithread/README.md)
-- **Corso Principale:** [Socket Programming in Java](../README.md)
-
-## 📖 Risorse Aggiuntive
-- [RFC 768 - User Datagram Protocol](https://tools.ietf.org/html/rfc768)
-- [RFC 1112 - Host Extensions for IP Multicasting](https://tools.ietf.org/html/rfc1112)
-- [RFC 3171 - IANA Guidelines for IPv4 Multicast Address Assignments](https://tools.ietf.org/html/rfc3171)
-- [Oracle Java Networking Tutorial](https://docs.oracle.com/javase/tutorial/networking/)
-
----
+[Indice corso](../README.md) · [Prima: multithreading TCP](../04-Miltithread/README.md) · [Dopo: multicast e broadcast](../06-Socket-Multicast-Broadcast/README.md)

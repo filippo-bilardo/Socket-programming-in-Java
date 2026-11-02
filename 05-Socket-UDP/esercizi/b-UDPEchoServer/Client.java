@@ -1,62 +1,34 @@
-/**
- * Client UDP che invia una stringa al server e attende la risposta.
- * 
- * javac Client; java Client;
- * 
- * @autor Filippo Bilardo 
- * @version 1.00 11/11/2023
- */ 
-import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.util.Scanner;
-
-public class Client 
-{
-    private static final String UNICAST_IP = "127.0.0.1";
-    private static final int UNICAST_PORT = 9876;
-
-    public static void main(String[] args) 
-    {
-        try 
-        {
-            //Creo lo scanner per leggere da tastiera
-            Scanner scanner = new Scanner(System.in);
-
-            //Creo il DatagramSocket per lo scambio dei dati con il server
-            DatagramSocket clntSocket = new DatagramSocket();
-            InetAddress srvAddr = InetAddress.getByName(UNICAST_IP);
-            int srvPort = UNICAST_PORT;
-
-            while (true) 
-            {
-				//Leggo da tastiera una stringa e la invio al server
-				System.out.print("> "); //prompt
-				String sndMsg = scanner.nextLine();
-				byte[] sndData = sndMsg.getBytes();
-				DatagramPacket sndPacket = new DatagramPacket(sndData, sndData.length, srvAddr, srvPort); 
-				clntSocket.send(sndPacket);
-				
-				//Fine della comunicazione
-				if(sndMsg.equals("bye")) break;
-
-				//Attendo la ricezione del DatagramPacket dal server 
-				byte[] rcvData = new byte[1024];
-				DatagramPacket rcvPacket = new DatagramPacket(rcvData, rcvData.length);																									
-				clntSocket.receive(rcvPacket);
-				//Visualizzo a schermo i dati del pacchetto ricevuto
-				String rcvMsg = new String(rcvPacket.getData(), 0, rcvPacket.getLength());
-				System.out.print("[" + rcvPacket.getAddress().getHostName() + ":" + rcvPacket.getPort() + "] ");
-				System.out.println(rcvMsg);
-
-				//Fine della comunicazione
-				if(rcvMsg.equals("bye")) break;
+import java.net.*;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+/** bye termina solo questo client; il server resta disponibile agli altri. */
+public class Client {
+    public static void main(String[] args) throws Exception {
+        String host = args.length > 0 ? args[0] : "localhost";
+        int port = args.length > 1 ? Integer.parseInt(args[1]) : 9876;
+        try (DatagramSocket socket = new DatagramSocket()) {
+            InetSocketAddress peer = new InetSocketAddress(InetAddress.getByName(host), port);
+            BufferedReader console = new BufferedReader(new InputStreamReader(System.in));
+            String line;
+            while ((line = console.readLine()) != null) {
+                byte[] data = line.getBytes(StandardCharsets.UTF_8);
+                if (data.length > 1024) { System.err.println("Max 1024 byte"); continue; }
+                socket.send(new DatagramPacket(data, data.length, peer));
+                byte[] buffer = new byte[1025];
+                DatagramPacket reply = new DatagramPacket(buffer, buffer.length);
+                long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(2);
+                try {
+                    do {
+                        long left = deadline - System.nanoTime();
+                        if (left <= 0) throw new SocketTimeoutException();
+                        socket.setSoTimeout((int)Math.max(1, java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(left)));
+                        reply.setLength(buffer.length); socket.receive(reply);
+                    } while (!reply.getSocketAddress().equals(peer));
+                } catch (SocketTimeoutException e) { System.err.println("TIMEOUT: esito non noto"); break; }
+                if (reply.getLength() > 1024) throw new IOException("Risposta troppo grande");
+                System.out.println("ECHO " + new String(reply.getData(), 0, reply.getLength(), StandardCharsets.UTF_8));
+                if (line.equals("bye")) break;
             }
-            scanner.close();
-            clntSocket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 }

@@ -1,44 +1,12 @@
-/**
- * udp-receiver.js
- * Esempio di ricevitore UDP in JavaScript/Node.js
- * Riceve un messaggio UDP e lo stampa a schermo
- * Versione: 1.0
- * Data: 25/01/26
- * Autore: Filippo Bilardo
- * 
- * node udp-receiver.js
- */
-
-const dgram = require('dgram');
-
-// Crea socket UDP
+const dgram = require('node:dgram');
+const port = Number(process.argv[2] ?? 9876);
+if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('Porta non valida');
 const socket = dgram.createSocket('udp4');
-
-// Configurazione
-const port = 9876;
-
-// Gestione errori
-socket.on('error', (err) => {
-    console.error('Errore socket:', err);
-    socket.close();
-    process.exit(1);
-});
-
-// Quando il socket è pronto
-socket.on('listening', () => {
-    const address = socket.address();
-    console.log(`In attesa di messaggi su ${address.address}:${address.port}...`);
-});
-
-// Quando arriva un messaggio
-socket.on('message', (msg, remote) => {
-    const message = msg.toString();
-    console.log(`Messaggio ricevuto: ${message}`);
-    console.log(`Da: ${remote.address}:${remote.port}`);
-    
-    // Chiude il socket dopo aver ricevuto un messaggio
+socket.on('error', error => { console.error(error.message); socket.close(); process.exitCode = 1; });
+socket.on('listening', () => console.log(`PRONTO ${socket.address().port}`));
+socket.on('message', data => {
+    if (data.length > 1024) { console.error('Datagramma troppo grande'); process.exitCode = 1; }
+    else console.log('RICEVUTO ' + data.toString('utf8'));
     socket.close();
 });
-
-// Binding sulla porta
 socket.bind(port);

@@ -1,347 +1,84 @@
-# 1. Socket UDP - Fondamenti
+# Socket UDP in Java
 
-## Introduzione
-I socket UDP (User Datagram Protocol) rappresentano una delle modalità di comunicazione di rete più veloci disponibili in Java. A differenza dei socket TCP, UDP è un protocollo **connectionless** che privilegia la velocità rispetto all'affidabilità.
+Prerequisiti: [protocollo UDP](00-Il-protocollo-UDP.md), JDK 11+ e un terminale. Le classi principali sono [DatagramSocket](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/net/DatagramSocket.html) e [DatagramPacket](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/net/DatagramPacket.html).
 
-## Teoria
+## Un mittente e un ricevitore
 
-### Caratteristiche del Protocollo UDP
+Il [mittente Java](esempi/01.01-unicast-java/UdpSender.java) apre una porta locale effimera, codifica una stringa UTF-8 e invia un DatagramPacket al ricevitore. La lunghezza da trasmettere è **il numero di byte**, non `String.length()`: i caratteri accentati e altri caratteri Unicode possono occupare più byte.
 
-#### Vantaggi di UDP
-- **Velocità**: Nessun handshake o controllo di connessione
-- **Overhead ridotto**: Header minimale (8 byte)
-- **Broadcast/Multicast**: Supporto nativo per comunicazioni uno-a-molti
-- **Semplicità**: API più diretta e immediata
+Il [ricevitore Java](esempi/01.01-unicast-java/UdpReceiver.java) associa un socket alla porta 9876. `receive()` è bloccante e imposta indirizzo/porta del mittente e lunghezza effettiva nel pacchetto. La conversione in stringa deve considerare offset e lunghezza, non l'intero array.
 
-#### Svantaggi di UDP
-- **Nessuna garanzia di consegna**: I pacchetti possono essere persi
-- **Nessun controllo dell'ordine**: I pacchetti possono arrivare in ordine diverso
-- **Nessun controllo di flusso**: Rischio di overflow dei buffer
-- **Nessuna verifica di integrità**: Controllo checksum opzionale
+Dalla cartella dell'esempio:
 
-### Casi d'Uso Ideali per UDP
-
-```java
-// Esempi di applicazioni che beneficiano di UDP:
-
-// 1. Streaming multimediale in tempo reale
-// - Video conferenze
-// - Gaming online
-// - Live streaming
-
-// 2. Servizi di discovery
-// - DNS (Domain Name System)
-// - DHCP (Dynamic Host Configuration Protocol)
-// - mDNS (Multicast DNS)
-
-// 3. Monitoring e telemetria
-// - Invio metriche di sistema
-// - Logging distribuito
-// - IoT sensor data
-
-// 4. Applicazioni time-sensitive
-// - Trading ad alta frequenza
-// - Controllo industriale
-// - Sincronizzazione orologi
+```sh
+javac -encoding UTF-8 UdpSender.java UdpReceiver.java
+java UdpReceiver 9876
 ```
 
-### Architettura Socket UDP in Java 
+In un altro terminale:
 
-#### DatagramSocket
-
-```java
-// Creazione socket UDP
-DatagramSocket socket = new DatagramSocket();        // Porta casuale
-DatagramSocket socket = new DatagramSocket(8080);    // Porta specifica
-DatagramSocket socket = new DatagramSocket(8080, 
-    InetAddress.getByName("192.168.1.100"));        // IP e porta specifici
-
-// InetAddress - Rappresentazione indirizzi IP
-InetAddress address = InetAddress.getByName("192.168.1.100");
-// Contenitore per dati + indirizzamento
-DatagramPacket packet = new DatagramPacket(buffer, buffer.length, 
-                                          address, port);
+```sh
+java UdpSender localhost 9876 "Caffè e UDP"
 ```
 
-#### DatagramPacket
+Il ricevitore termina dopo il primo datagramma. Le [versioni Node.js](esempi/01.01-unicast-java/README.md) usano lo stesso protocollo e possono essere incrociate con quelle Java. Nessuna dipendenza npm è necessaria.
 
-```java
-// Packet per invio
-byte[] data = "Hello UDP".getBytes();
-InetAddress address = InetAddress.getByName("localhost");
-DatagramPacket packet = new DatagramPacket(data, data.length, address, 8080);
+## Richiesta e risposta
 
-// Packet per ricezione
-byte[] buffer = new byte[1024];
-DatagramPacket receivePacket = new DatagramPacket(buffer, buffer.length);
+Nell'[echo completo](esempi/01.02-EchoUdp/README.md), il server risponde all'indirizzo/porta contenuti nella richiesta. Il payload della risposta coincide esattamente con quello della richiesta: non aggiunge prefissi né timestamp.
+
+Il client conserva indirizzo e porta del peer e valida la sorgente di ogni risposta entro una deadline di 2 secondi. Usa un socket non connesso e una destinazione esplicita anche per i datagrammi vuoti. Invia un solo messaggio per volta; un timeout termina la sessione o viene propagato al chiamante. La stringa `quit` è un comando locale dell'interfaccia interattiva; non arresta il server.
+
+```sh
+javac -encoding UTF-8 EchoUDP.java
+java EchoUDP server 9999
 ```
 
-#### Invio e Ricezione
+In un altro terminale, dalla stessa cartella:
 
-```java
-// Client UDP
-DatagramSocket socket = new DatagramSocket();
-String message = "Hello Server";
-byte[] data = message.getBytes();
-
-DatagramPacket packet = new DatagramPacket(data, data.length, 
-    InetAddress.getByName("localhost"), 8080);
-socket.send(packet);
-
-// Server UDP
-DatagramSocket socket = new DatagramSocket(8080);
-byte[] buffer = new byte[1024];
-DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-socket.receive(packet); // Bloccante
-
-String received = new String(packet.getData(), 0, packet.getLength());
-InetAddress clientAddress = packet.getAddress();
-int clientPort = packet.getPort();
+```sh
+java EchoUDP client localhost 9999 "prova"
 ```
 
-#### Flusso di Comunicazione
-```java
-/*
- * SERVER UDP:
- * 1. Crea DatagramSocket sulla porta desiderata
- * 2. Crea buffer per ricezione dati
- * 3. Loop: riceve pacchetti e processa richieste
- * 4. Invia risposte ai client (opzionale)
- */
+Ometti l'ultimo argomento per leggere messaggi da tastiera. In modalità interattiva una riga vuota produce un datagramma vuoto valido. Ctrl+C arresta il server; il metodo `stop()` chiude il socket per sbloccare receive.
 
-/*
- * CLIENT UDP:
- * 1. Crea DatagramSocket (porta automatica)
- * 2. Prepara dati da inviare in DatagramPacket
- * 3. Invia pacchetto al server
- * 4. Riceve risposta (se prevista)
- */
+## Capacità del pacchetto e troncamento
+
+`receive()` aggiorna la lunghezza del DatagramPacket. Se riusi lo stesso oggetto per una nuova ricezione, ripristina la capacità con `packet.setLength(buffer.length)`; altrimenti un messaggio breve può limitare la ricezione successiva più lunga. Una nuova istanza DatagramPacket a ogni iterazione è un'alternativa.
+
+Negli esempi testuali il massimo applicativo è 1024 byte. Un buffer di 1025 byte consente di riconoscere e scartare anche un datagramma più grande: ricevere 1025 byte basta a sapere che il limite è stato superato, anche se il messaggio originale era ancora più grande. Non ricomporre il resto con una seconda receive: il resto del datagramma troncato è perso.
+
+## Timeout, errori e risorse
+
+- `setSoTimeout(ms)` richiede un valore positivo per limitare l'attesa; zero significa attesa senza limite.
+- `SocketTimeoutException` non distingue perdita della richiesta, perdita della risposta o ritardo del servizio.
+- `PortUnreachableException` può comparire con un socket UDP connesso se arriva un errore ICMP; non è una notifica di disconnessione affidabile.
+- `close()` sul socket locale sblocca una receive in un altro thread con un errore di socket. Il thread deve riconoscere l'arresto previsto.
+- Usa try-with-resources anche quando un'eccezione interrompe la comunicazione. Lo stato condiviso di un server va protetto separatamente dai socket.
+
+Non riusare in parallelo lo stesso DatagramPacket o lo stesso array modificabile fra il thread ricevitore e worker: copia i byte effettivi prima di consegnarli ad altri thread, oppure trasferisci la proprietà del buffer e riciclalo soltanto al termine dell'elaborazione.
+
+## DNS: due esempi diversi
+
+[SimpleDNSResolver](esempi/SimpleDNSResolver.java) usa `InetAddress.getByName`: è il resolver del sistema, che può consultare hosts, cache e servizi DNS. Non illustra un pacchetto DNS UDP costruito dall'applicazione.
+
+[SimpleDNSQuery](esempi/SimpleDNSQuery.java) costruisce invece una query binaria DNS A/IN: ID casuale, header, etichette, QTYPE e QCLASS. Collega il socket al server scelto, controlla ID, QR, RCODE, troncamento e limiti del pacchetto, percorre le risposte e cerca un record A anche dopo un CNAME. Legge nomi compressi senza assumere che ogni nome occupi due byte.
+
+```sh
+javac -encoding UTF-8 SimpleDNSResolver.java SimpleDNSQuery.java
+java SimpleDNSResolver localhost
+java SimpleDNSQuery example.com 8.8.8.8 53
 ```
 
-## Implementazione Base
+L'ultimo comando richiede accesso al DNS indicato; in laboratorio il docente può fornire un altro server. Il parser è un esempio limitato: non è un resolver ricorsivo completo, non valida DNSSEC e segnala TC come necessità di fallback TCP, senza implementarlo. L'esempio segue il formato della [RFC 1035](https://www.rfc-editor.org/rfc/rfc1035.html); il limite storico di 512 byte non è un limite universale del DNS moderno.
 
-### Server UDP Semplice
-```java
-import java.net.*;
-import java.io.IOException;
+## Prove da eseguire
 
-public class SimpleUDPServer {
-    private static final int BUFFER_SIZE = 1024;
-    
-    public static void main(String[] args) throws IOException {
-        int port = 8888;
-        
-        // Crea socket legato alla porta
-        try (DatagramSocket socket = new DatagramSocket(port)) {
-            System.out.println("🚀 Server UDP avviato sulla porta " + port);
-            
-            byte[] buffer = new byte[BUFFER_SIZE];
-            
-            while (true) {
-                // Prepara pacchetto per ricezione
-                DatagramPacket receivePacket = new DatagramPacket(
-                    buffer, buffer.length);
-                
-                // Riceve dati (operazione bloccante)
-                socket.receive(receivePacket);
-                
-                // Estrae informazioni
-                String message = new String(receivePacket.getData(), 
-                                          0, receivePacket.getLength());
-                InetAddress clientAddress = receivePacket.getAddress();
-                int clientPort = receivePacket.getPort();
-                
-                System.out.printf("📨 Ricevuto da %s:%d - %s%n", 
-                                clientAddress, clientPort, message);
-                
-                // Echo back al client
-                String response = "Echo: " + message;
-                byte[] responseData = response.getBytes();
-                
-                DatagramPacket sendPacket = new DatagramPacket(
-                    responseData, responseData.length, 
-                    clientAddress, clientPort);
-                
-                socket.send(sendPacket);
-            }
-        }
-    }
-}
-```
+1. Invia “è”, una riga breve e una più lunga, verificando tutti i byte e la lunghezza.
+2. Confronta Java→Java, Node→Node, Java→Node e Node→Java.
+3. Prova payload vuoto, 1024 byte e 1025 byte: il primo è valido, il massimo è accettato e quello oltre limite è scartato.
+4. Invia da due client e controlla che le risposte tornino ai rispettivi endpoint.
+5. Avvia un client senza servizio, osservando timeout/ICMP senza attese infinite.
+6. Arresta il server mentre attende dati e verifica che termini.
 
-### Client UDP Semplice
-```java
-import java.net.*;
-import java.io.IOException;
-import java.util.Scanner;
-
-public class SimpleUDPClient {
-    public static void main(String[] args) throws IOException {
-        String serverHost = "localhost";
-        int serverPort = 8888;
-        
-        try (DatagramSocket socket = new DatagramSocket()) {
-            InetAddress serverAddress = InetAddress.getByName(serverHost);
-            Scanner scanner = new Scanner(System.in);
-            
-            System.out.println("💬 Client UDP - digita messaggi (quit per uscire)");
-            
-            String message;
-            while (!(message = scanner.nextLine()).equals("quit")) {
-                // Prepara e invia messaggio
-                byte[] sendData = message.getBytes();
-                DatagramPacket sendPacket = new DatagramPacket(
-                    sendData, sendData.length, serverAddress, serverPort);
-                
-                socket.send(sendPacket);
-                
-                // Riceve risposta
-                byte[] receiveBuffer = new byte[1024];
-                DatagramPacket receivePacket = new DatagramPacket(
-                    receiveBuffer, receiveBuffer.length);
-                
-                socket.receive(receivePacket);
-                
-                String response = new String(receivePacket.getData(), 
-                                           0, receivePacket.getLength());
-                System.out.println("📨 Risposta: " + response);
-            }
-        }
-    }
-}
-```
-
-## Gestione Errori e Timeout
-
-### Configurazione Timeout
-```java
-// Imposta timeout per evitare blocchi indefiniti
-socket.setSoTimeout(5000); // 5 secondi
-
-try {
-    socket.receive(packet);
-} catch (SocketTimeoutException e) {
-    System.out.println("⏰ Timeout - nessun pacchetto ricevuto");
-} catch (IOException e) {
-    System.err.println("💥 Errore I/O: " + e.getMessage());
-}
-```
-
-### Gestione Packet Loss
-```java
-// Meccanismo di retry con backoff exponenziale
-int maxRetries = 3;
-int baseTimeout = 1000;
-
-for (int retry = 0; retry < maxRetries; retry++) {
-    try {
-        socket.setSoTimeout(baseTimeout * (1 << retry)); // 1s, 2s, 4s
-        socket.send(packet);
-        socket.receive(responsePacket);
-        break; // Successo
-        
-    } catch (SocketTimeoutException e) {
-        System.out.println("⚠️ Tentativo " + (retry + 1) + " fallito");
-        if (retry == maxRetries - 1) {
-            throw new IOException("Massimo numero di tentativi raggiunto");
-        }
-    }
-}
-```
-
-## Buffer Management
-
-### Dimensionamento Buffer
-```java
-// Considera la MTU (Maximum Transmission Unit)
-// Ethernet standard: 1500 bytes
-// UDP header: 8 bytes
-// IP header: 20 bytes (IPv4) / 40 bytes (IPv6)
-// Payload utile: ~1472 bytes per evitare frammentazione
-
-private static final int SAFE_UDP_SIZE = 1400; // Margine di sicurezza
-private static final int MAX_UDP_SIZE = 65507;  // Massimo teorico UDP
-```
-
-### Buffer Riutilizzabili
-```java
-// Evita allocazioni continue in loop
-byte[] receiveBuffer = new byte[BUFFER_SIZE];
-DatagramPacket receivePacket = new DatagramPacket(receiveBuffer, receiveBuffer.length);
-
-while (running) {
-    // Reset lunghezza per riutilizzo
-    receivePacket.setLength(receiveBuffer.length);
-    
-    socket.receive(receivePacket);
-    
-    // Processa dati...
-    processData(receivePacket.getData(), receivePacket.getLength());
-}
-```
-
-## Considerazioni di Performance
-
-### Thread Safety
-```java
-// DatagramSocket NON è thread-safe
-// Sincronizza accesso concorrente o usa socket separati
-
-// Opzione 1: Sincronizzazione
-synchronized(socket) {
-    socket.send(packet);
-}
-
-// Opzione 2: Socket dedicati per thread
-DatagramSocket sendSocket = new DatagramSocket();
-DatagramSocket receiveSocket = new DatagramSocket(port);
-```
-
-### Buffering del Sistema Operativo
-```java
-// Aumenta buffer SO per applicazioni ad alto throughput
-socket.setReceiveBufferSize(64 * 1024);  // 64KB
-socket.setSendBufferSize(64 * 1024);     // 64KB
-
-// Verifica dimensioni effettive (SO può limitare)
-System.out.println("Buffer ricezione: " + socket.getReceiveBufferSize());
-System.out.println("Buffer invio: " + socket.getSendBufferSize());
-```
-
-## Best Practices
-
-### ✅ Raccomandazioni
-1. **Usa timeout appropriati** per evitare blocchi
-2. **Dimensiona buffer correttamente** per evitare frammentazione
-3. **Implementa retry logic** per gestire packet loss
-4. **Valida sempre i dati ricevuti** (dimensione e contenuto)
-5. **Usa pool di buffer** per applicazioni ad alte performance
-
-### ❌ Errori Comuni
-1. **Non gestire SocketTimeoutException**
-2. **Buffer troppo piccoli** che causano perdita dati
-3. **Assumere consegna garantita** senza verifiche
-4. **Non validare indirizzi sorgente** (security risk)
-5. **Creare socket in loop** invece di riutilizzarli
-
-## Confronto UDP vs TCP
-
-| Caratteristica | UDP | TCP |
-|---|---|---|
-| **Connessione** | Connectionless | Connection-oriented |
-| **Affidabilità** | Best effort | Garantita |
-| **Ordinamento** | Non garantito | Garantito |
-| **Velocità** | Molto veloce | Più lento |
-| **Overhead** | Minimo (8 byte) | Maggiore (20+ byte) |
-| **Broadcast** | Supportato | Non supportato |
-| **Controllo flusso** | Assente | Presente |
-| **Casi d'uso** | Streaming, gaming, DNS | Web, email, file transfer |
-
-## Prossimi Passi
-- **Broadcast e Multicast**: Comunicazione uno-a-molti
-- **UDP con reliability**: Implementare ACK e retry
-- **Performance tuning**: Ottimizzazioni avanzate
-- **Security**: Autenticazione e crittografia UDP
-
----
-[🏠 Torna al Modulo](../README.md) | [➡️ Prossima Lezione](02-Broadcast-Multicast.md)
+[Indice modulo](README.md) · [Prestazioni](02-UDP-Performance.md) · [Esercizi](esercizi/README.md)

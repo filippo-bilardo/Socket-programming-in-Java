@@ -43,7 +43,7 @@ degli esercizi c/d. Il server HTTP richiede invece un messaggio HTTP completo.
 - [Chat con protocollo personalizzato](../04-Miltithread/esempi/CustomProtocolChat.java).
 
 Queste attività seguono i fondamenti TCP e introducono concorrenza e protocolli
-più articolati. La comunicazione UDP è trattata nel [modulo UDP](../04-Socket-UDP/README.md).
+più articolati. La comunicazione UDP è trattata nel [modulo UDP](../05-Socket-UDP/README.md).
 
 ## Navigazione
 

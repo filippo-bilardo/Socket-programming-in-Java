@@ -1,31 +1,15 @@
-/**
- * UdpSender.java
- * Esempio di mittente UDP in Java
- * Invia un messaggio UDP a un ricevitore
- * Versione: 1.0
- * Data: 18/10/25
- * Autore: Filippo Bilardo
- *
- * javac UdpSender.java && java UdpSender
- */
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-
+import java.net.*;
+import java.nio.charset.StandardCharsets;
+/** Un solo datagramma UTF-8. java UdpSender [host] [porta] [messaggio] */
 public class UdpSender {
-    public static void main(String[] args) {
-        try {
-            DatagramSocket socket = new DatagramSocket();
-            String message = "Hello, UDP!";
-            byte[] buffer = message.getBytes();
-            InetAddress address = InetAddress.getByName("localhost");
-
-            DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, 9876);
-            socket.send(packet);
-            System.out.println("Messaggio inviato!");
-            socket.close();
-        } catch (Exception e) {
-            e.printStackTrace();
+    public static void main(String[] args) throws Exception {
+        String host = args.length > 0 ? args[0] : "localhost";
+        int port = args.length > 1 ? Integer.parseInt(args[1]) : 9876;
+        byte[] data = (args.length > 2 ? args[2] : "Ciao, UDP!").getBytes(StandardCharsets.UTF_8);
+        if (port < 1 || port > 65535 || data.length > 1024) throw new IllegalArgumentException("Porta o messaggio non valido (max 1024 byte)");
+        try (DatagramSocket socket = new DatagramSocket()) {
+            socket.send(new DatagramPacket(data, data.length, InetAddress.getByName(host), port));
+            System.out.println("INVIATO " + data.length + " byte");
         }
     }
 }

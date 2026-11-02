@@ -1,183 +1,90 @@
+import java.io.*;
 import java.net.*;
-import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 
-/**
- * Esempio SEMPLICE di query DNS usando socket UDP
- * Risolve un nome di dominio (es. google.com) in indirizzo IP
- * 
- * DNS usa porta 53 e formato binario per le query
- */
+/** Query DNS A/IN via UDP. Rifiuta risposte troncate; non implementa fallback TCP o DNSSEC. */
 public class SimpleDNSQuery {
-    
-    // Server DNS pubblico di Google
-    private static final String DNS_SERVER = "8.8.8.8";
-    private static final int DNS_PORT = 53;
-    
-    public static void main(String[] args) {
-        try {
-            // Dominio da risolvere
-            String domain = "google.com";
-            
-            System.out.println("=== DNS Query Example ===");
-            System.out.println("Dominio da risolvere: " + domain);
-            System.out.println("DNS Server: " + DNS_SERVER);
-            System.out.println();
-            
-            // 1. Crea il socket UDP
-            DatagramSocket socket = new DatagramSocket();
-            socket.setSoTimeout(5000); // Timeout 5 secondi
-            
-            // 2. Costruisci la query DNS
-            byte[] queryData = buildDNSQuery(domain);
-            
-            // 3. Invia la query al server DNS
-            InetAddress dnsAddress = InetAddress.getByName(DNS_SERVER);
-            DatagramPacket queryPacket = new DatagramPacket(
-                queryData, 
-                queryData.length, 
-                dnsAddress, 
-                DNS_PORT
-            );
-            
-            System.out.println("Invio query DNS...");
-            socket.send(queryPacket);
-            
-            // 4. Ricevi la risposta
-            byte[] responseData = new byte[512]; // DNS usa max 512 byte per UDP
-            DatagramPacket responsePacket = new DatagramPacket(
-                responseData, 
-                responseData.length
-            );
-            
-            System.out.println("Attendo risposta...");
-            socket.receive(responsePacket);
-            
-            // 5. Parsa la risposta per estrarre l'IP
-            String ip = parseDNSResponse(responseData);
-            
-            System.out.println("\n=== Risultato ===");
-            System.out.println(domain + " -> " + ip);
-            
-            // 6. Chiudi il socket
-            socket.close();
-            
-        } catch (SocketTimeoutException e) {
-            System.err.println("Timeout: nessuna risposta dal server DNS");
-        } catch (Exception e) {
-            System.err.println("Errore: " + e.getMessage());
-            e.printStackTrace();
+    public static byte[] buildDNSQuery(String domain, int id) throws IOException {
+        String ascii;
+        try { ascii = IDN.toASCII(domain.endsWith(".") ? domain.substring(0, domain.length() - 1) : domain); }
+        catch (IllegalArgumentException e) { throw new IOException("Dominio non valido", e); }
+        if (ascii.isEmpty() || ascii.length() > 253) throw new IOException("Dominio non valido");
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        DataOutputStream out = new DataOutputStream(bytes);
+        out.writeShort(id); out.writeShort(0x0100); out.writeShort(1);
+        out.writeShort(0); out.writeShort(0); out.writeShort(0);
+        for (String label : ascii.split("\\.", -1)) {
+            byte[] data = label.getBytes(StandardCharsets.US_ASCII);
+            if (data.length < 1 || data.length > 63) throw new IOException("Etichetta DNS non valida");
+            out.writeByte(data.length); out.write(data);
+        }
+        out.writeByte(0); out.writeShort(1); out.writeShort(1);
+        return bytes.toByteArray();
+    }
+    private static int u16(byte[] data, int pos, int end) throws IOException {
+        if (pos < 0 || pos + 2 > end) throw new IOException("Pacchetto DNS incompleto");
+        return ((data[pos] & 255) << 8) | (data[pos + 1] & 255);
+    }
+    private static int skipName(byte[] data, int pos, int end) throws IOException {
+        int after = -1;
+        Set<Integer> visited = new HashSet<>();
+        while (pos < end && visited.add(pos)) {
+            int n = data[pos] & 255;
+            if ((n & 0xc0) == 0xc0) {
+                int pointer = u16(data, pos, end) & 0x3fff;
+                if (after < 0) after = pos + 2;
+                pos = pointer;
+            } else if ((n & 0xc0) != 0 || n > 63) throw new IOException("Nome DNS non valido");
+            else if (n == 0) return after < 0 ? pos + 1 : after;
+            else {
+                if (pos + 1 + n > end) throw new IOException("Nome DNS incompleto");
+                pos += n + 1;
+            }
+        }
+        throw new IOException("Compressione DNS ciclica o incompleta");
+    }
+    public static String parseDNSResponse(byte[] data, int length, int expectedId) throws IOException {
+        if (length < 12 || length > data.length) throw new IOException("Header DNS incompleto");
+        if (u16(data, 0, length) != (expectedId & 65535)) throw new IOException("ID DNS non corrispondente");
+        int flags = u16(data, 2, length);
+        if ((flags & 0x8000) == 0 || (flags & 0x7800) != 0) throw new IOException("Non è una risposta DNS standard");
+        if ((flags & 0x0200) != 0) throw new IOException("Risposta troncata: necessario fallback TCP (non implementato)");
+        if ((flags & 15) != 0) throw new IOException("Errore DNS RCODE=" + (flags & 15));
+        int questions = u16(data, 4, length), answers = u16(data, 6, length), pos = 12;
+        for (int i = 0; i < questions; i++) {
+            pos = skipName(data, pos, length);
+            u16(data, pos + 2, length); pos += 4;
+        }
+        for (int i = 0; i < answers; i++) {
+            pos = skipName(data, pos, length);
+            int type = u16(data, pos, length), clazz = u16(data, pos + 2, length);
+            int size = u16(data, pos + 8, length); pos += 10;
+            if (pos + size > length) throw new IOException("RDATA DNS incompleto");
+            if (type == 1 && clazz == 1 && size == 4) {
+                byte[] ip = Arrays.copyOfRange(data, pos, pos + 4);
+                return InetAddress.getByAddress(ip).getHostAddress();
+            }
+            pos += size; // Per esempio CNAME prima del record A.
+        }
+        throw new IOException("Nessun record A nella risposta");
+    }
+    public static String resolve(String domain, String server, int port) throws IOException {
+        int id = ThreadLocalRandom.current().nextInt(65536);
+        byte[] query = buildDNSQuery(domain, id);
+        try (DatagramSocket socket = new DatagramSocket()) {
+            socket.connect(InetAddress.getByName(server), port); socket.setSoTimeout(2000);
+            socket.send(new DatagramPacket(query, query.length));
+            byte[] buffer = new byte[4096];
+            DatagramPacket reply = new DatagramPacket(buffer, buffer.length); socket.receive(reply);
+            return parseDNSResponse(reply.getData(), reply.getLength(), id);
         }
     }
-    
-    /**
-     * Costruisce un pacchetto DNS query in formato binario
-     * 
-     * Struttura semplificata:
-     * - Header (12 byte): ID, flags, contatori
-     * - Question: nome dominio + tipo query
-     * 
-     * @param domain il dominio da risolvere (es. "google.com")
-     * @return array di byte con la query DNS
-     */
-    private static byte[] buildDNSQuery(String domain) {
-        ByteBuffer buffer = ByteBuffer.allocate(512);
-        
-        // === HEADER (12 byte) ===
-        
-        // Transaction ID (2 byte) - numero casuale per identificare la richiesta
-        buffer.putShort((short) 0x1234);
-        
-        // Flags (2 byte) - 0x0100 = query standard con ricorsione
-        buffer.putShort((short) 0x0100);
-        
-        // QDCOUNT (2 byte) - numero di domande (1)
-        buffer.putShort((short) 1);
-        
-        // ANCOUNT (2 byte) - numero di risposte (0 nella query)
-        buffer.putShort((short) 0);
-        
-        // NSCOUNT (2 byte) - numero di authority records (0)
-        buffer.putShort((short) 0);
-        
-        // ARCOUNT (2 byte) - numero di additional records (0)
-        buffer.putShort((short) 0);
-        
-        // === QUESTION SECTION ===
-        
-        // Nome dominio codificato (es. "google.com" -> 6google3com0)
-        // Formato: [lunghezza]label[lunghezza]label...[0]
-        String[] labels = domain.split("\\.");
-        for (String label : labels) {
-            buffer.put((byte) label.length());  // Lunghezza del label
-            buffer.put(label.getBytes());        // Bytes del label
-        }
-        buffer.put((byte) 0); // Terminatore (fine nome)
-        
-        // QTYPE (2 byte) - tipo di query: 0x0001 = A (indirizzo IPv4)
-        buffer.putShort((short) 1);
-        
-        // QCLASS (2 byte) - classe: 0x0001 = IN (Internet)
-        buffer.putShort((short) 1);
-        
-        // Ritorna solo i byte utilizzati
-        byte[] query = new byte[buffer.position()];
-        buffer.rewind();
-        buffer.get(query);
-        
-        return query;
-    }
-    
-    /**
-     * Parsa la risposta DNS per estrarre l'indirizzo IP
-     * 
-     * Legge header + question + risposta per trovare il primo IP
-     * 
-     * @param response array di byte con la risposta DNS
-     * @return stringa con l'indirizzo IP (es. "142.250.180.46")
-     */
-    private static String parseDNSResponse(byte[] response) {
-        ByteBuffer buffer = ByteBuffer.wrap(response);
-        
-        // === SALTA HEADER (12 byte) ===
-        buffer.position(12);
-        
-        // === SALTA QUESTION SECTION ===
-        // Leggi il nome (salta fino allo 0)
-        while (buffer.get() != 0) {
-            // Continua fino al terminatore
-        }
-        // Salta QTYPE (2 byte) e QCLASS (2 byte)
-        buffer.getShort();
-        buffer.getShort();
-        
-        // === LEGGI ANSWER SECTION ===
-        
-        // Salta il nome (compressed pointer: 2 byte che iniziano con 11)
-        buffer.getShort();
-        
-        // TYPE (2 byte) - dovrebbe essere 1 (A record)
-        short type = buffer.getShort();
-        
-        // CLASS (2 byte) - dovrebbe essere 1 (IN)
-        buffer.getShort();
-        
-        // TTL (4 byte) - time to live (ignoriamo)
-        buffer.getInt();
-        
-        // RDLENGTH (2 byte) - lunghezza dei dati (4 per IPv4)
-        short dataLength = buffer.getShort();
-        
-        // RDATA - i dati veri (4 byte = indirizzo IP)
-        if (type == 1 && dataLength == 4) {
-            // Leggi i 4 byte dell'IP
-            int ip1 = buffer.get() & 0xFF;  // & 0xFF per convertire byte signed in unsigned
-            int ip2 = buffer.get() & 0xFF;
-            int ip3 = buffer.get() & 0xFF;
-            int ip4 = buffer.get() & 0xFF;
-            
-            return ip1 + "." + ip2 + "." + ip3 + "." + ip4;
-        }
-        
-        return "Indirizzo non trovato";
+    public static void main(String[] args) throws Exception {
+        String domain = args.length > 0 ? args[0] : "example.com";
+        String server = args.length > 1 ? args[1] : "8.8.8.8";
+        int port = args.length > 2 ? Integer.parseInt(args[2]) : 53;
+        System.out.println(domain + " -> " + resolve(domain, server, port));
     }
 }

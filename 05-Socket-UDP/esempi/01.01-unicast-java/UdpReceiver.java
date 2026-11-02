@@ -1,30 +1,16 @@
-/**
- * UdpReceiver.java
- * Esempio di ricevitore UDP in Java
- * Riceve un messaggio UDP e lo stampa a schermo
- * Versione: 1.0
- * Data: 18/10/25
- * Autore: Filippo Bilardo
- * 
- * javac UdpReceiver.java && java UdpReceiver
- */
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-
+import java.net.*;
+import java.nio.charset.StandardCharsets;
+/** Riceve un datagramma, poi termina. java UdpReceiver [porta] */
 public class UdpReceiver {
-    public static void main(String[] args) {
-        try {
-            DatagramSocket socket = new DatagramSocket(9876);
-            byte[] buffer = new byte[1024];
-            DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-
-            System.out.println("In attesa di messaggi...");
+    public static void main(String[] args) throws Exception {
+        int port = args.length > 0 ? Integer.parseInt(args[0]) : 9876;
+        try (DatagramSocket socket = new DatagramSocket(port)) {
+            byte[] data = new byte[1025]; // Un byte sentinella per rifiutare oltre 1024 byte.
+            DatagramPacket packet = new DatagramPacket(data, data.length);
+            System.out.println("PRONTO " + socket.getLocalPort());
             socket.receive(packet);
-            String message = new String(packet.getData(), 0, packet.getLength());
-            System.out.println("Messaggio ricevuto: " + message);
-            socket.close();
-        } catch (Exception e) {
-            e.printStackTrace();
+            if (packet.getLength() > 1024) throw new IllegalArgumentException("Datagramma troppo grande");
+            System.out.println("RICEVUTO " + new String(packet.getData(), packet.getOffset(), packet.getLength(), StandardCharsets.UTF_8));
         }
     }
 }

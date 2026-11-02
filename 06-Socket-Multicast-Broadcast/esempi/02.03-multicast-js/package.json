@@ -1,0 +1,10 @@
+{
+  "name": "udp-multicast-examples",
+  "version": "1.1.0",
+  "private": true,
+  "description": "Mittente e ricevitore multicast, soltanto API native Node.js",
+  "scripts": {
+    "sender": "node multicast-sender.js",
+    "receiver": "node multicast-receiver.js"
+  }
+}

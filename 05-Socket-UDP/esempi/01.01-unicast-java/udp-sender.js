@@ -1,42 +1,12 @@
-/**
- * udp-sender.js
- * Esempio di mittente UDP in JavaScript/Node.js
- * Invia un messaggio UDP a un ricevitore
- * Versione: 1.0
- * Data: 25/01/26
- * Autore: Filippo Bilardo
- *
- * node udp-sender.js
- */
-
-const dgram = require('dgram');
-
-// Crea socket UDP
+const dgram = require('node:dgram');
+const host = process.argv[2] ?? '127.0.0.1';
+const port = Number(process.argv[3] ?? 9876);
+const data = Buffer.from(process.argv[4] ?? 'Ciao, UDP!', 'utf8');
+if (!Number.isInteger(port) || port < 1 || port > 65535 || data.length > 1024) throw new Error('Porta o messaggio non valido');
 const socket = dgram.createSocket('udp4');
-
-// Configurazione
-const message = 'Hello, UDP!';
-const host = 'localhost';
-const port = 9876;
-
-// Prepara il buffer
-const buffer = Buffer.from(message);
-
-// Invia il messaggio
-socket.send(buffer, 0, buffer.length, port, host, (err) => {
-    if (err) {
-        console.error('Errore durante l\'invio:', err);
-        socket.close();
-        process.exit(1);
-    }
-    
-    console.log('Messaggio inviato!');
+socket.on('error', error => { console.error(error.message); socket.close(); process.exitCode = 1; });
+socket.send(data, port, host, error => {
+    if (error) { console.error(error.message); process.exitCode = 1; }
+    else console.log(`INVIATO ${data.length} byte`);
     socket.close();
-});
-
-// Gestione errori
-socket.on('error', (err) => {
-    console.error('Errore socket:', err);
-    socket.close();
-    process.exit(1);
 });
