@@ -110,7 +110,7 @@ while (isActive) {
 ## 🔗 Esempi di Riferimento
 
 - [Esempio a: Echo Client-Server](esercizi/a-EchoService/README.md) - Comunicazione bidirezionale
-- [Approfondimento: File Transfer](../04-Miltithread/esempi/FileTransfer.java) - Trasferimento file via TCP
+- [Approfondimento: File Transfer](../03-Socket-TCP/esempi/FileTransfer.java) - Trasferimento file via TCP
 
 ## 💡 Best Practices
 

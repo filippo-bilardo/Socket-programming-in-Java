@@ -140,7 +140,7 @@ public class ConnectionPool implements AutoCloseable {
 ## 🔗 Esempi di Riferimento
 
 - [Esempio a: chiusura di client e stream](esercizi/a-EchoService/TcpClient.java) - Pattern corretti per cleanup
-- [Approfondimento: pool di thread del server](../04-Miltithread/esempi/ConnectionPoolServer.java) - Pool di connessioni riutilizzabili
+- [Approfondimento: pool di thread del server](../04-Multithread/esempi/ConnectionPoolServer.java) - Pool di thread con connessioni e coda limitate
 
 ## 💡 Best Practices
 
@@ -159,4 +159,4 @@ public class ConnectionPool implements AutoCloseable {
 ## Navigazione del Corso
 - [📑 Torna all'Indice del Corso](../README.md)
 - [⬅️ Guida Precedente](02-Comunicazione-Dati-TCP.md)
-- [➡️ Esercitazione Successiva](../04-Miltithread/04-Multithreading.md)
+- [➡️ Esercitazione Successiva](../04-Multithread/02-Server-Multithreaded.md)

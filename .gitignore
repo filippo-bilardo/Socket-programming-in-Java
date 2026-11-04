@@ -32,8 +32,10 @@ tmp/
 
 # Modulo 04: pubblicare soltanto gli esercizi a, b e c e il loro indice.
 # Le altre esercitazioni rimangono disponibili localmente.
-/04-Miltithread/esercizi/*
-!/04-Miltithread/esercizi/README.md
-!/04-Miltithread/esercizi/a-ChatServer-Multithreaded/
-!/04-Miltithread/esercizi/b-Dispenser/
-!/04-Miltithread/esercizi/c-Prenotazioni/
+/04-Multithread/esercizi/*
+!/04-Multithread/esercizi/README.md
+!/04-Multithread/esercizi/a-ChatServer-Multithreaded/
+!/04-Multithread/esercizi/b-Dispenser/
+!/04-Multithread/esercizi/c-Prenotazioni/
+
+!/04-Multithread/esercizi/a-Mutithread-base/

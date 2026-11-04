@@ -37,10 +37,10 @@ degli esercizi c/d. Il server HTTP richiede invece un messaggio HTTP completo.
 
 ## Approfondimenti nel modulo multithreading
 
-- [Server con più client](../04-Miltithread/04-Multithreading.md).
-- [Trasferimento file](../04-Miltithread/esempi/FileTransfer.java).
-- [Pool di thread del server](../04-Miltithread/esempi/ConnectionPoolServer.java).
-- [Chat con protocollo personalizzato](../04-Miltithread/esempi/CustomProtocolChat.java).
+- [Server con più client](../04-Multithread/02-Server-Multithreaded.md).
+- [Trasferimento file](../03-Socket-TCP/esempi/FileTransfer.java).
+- [Pool di thread del server](../04-Multithread/esempi/ConnectionPoolServer.java).
+- [Chat con protocollo personalizzato](../04-Multithread/esempi/CustomProtocolChat.java).
 
 Queste attività seguono i fondamenti TCP e introducono concorrenza e protocolli
 più articolati. La comunicazione UDP è trattata nel [modulo UDP](../05-Socket-UDP/README.md).
@@ -49,4 +49,4 @@ più articolati. La comunicazione UDP è trattata nel [modulo UDP](../05-Socket-
 
 [Modulo precedente: ambiente di sviluppo](../02-Ambiente-Sviluppo/README.md) ·
 [Indice del corso](../README.md) ·
-[Passo successivo: multithreading](../04-Miltithread/04-Multithreading.md)
+[Passo successivo: multithreading](../04-Multithread/02-Server-Multithreaded.md)

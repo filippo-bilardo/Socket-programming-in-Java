@@ -20,4 +20,4 @@ Le misure su localhost non descrivono automaticamente una LAN. I risultati del b
 
 Broadcast, multicast e discovery sono raccolti nel [modulo 06](../06-Socket-Multicast-Broadcast/README.md); non sono richiesti per svolgere gli esercizi di questo modulo.
 
-[Indice corso](../README.md) · [Prima: multithreading TCP](../04-Miltithread/README.md) · [Dopo: multicast e broadcast](../06-Socket-Multicast-Broadcast/README.md)
+[Indice corso](../README.md) · [Prima: multithreading TCP](../04-Multithread/README.md) · [Dopo: multicast e broadcast](../06-Socket-Multicast-Broadcast/README.md)

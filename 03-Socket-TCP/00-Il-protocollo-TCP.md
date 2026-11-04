@@ -674,7 +674,7 @@ public class FileClient {
 
 ### 💬 **Chat TCP Multi-Client**
 
-Il codice completo della [chat con protocollo personalizzato](../04-Miltithread/esempi/CustomProtocolChat.java)
+Il codice completo della [chat con protocollo personalizzato](../04-Multithread/esempi/CustomProtocolChat.java)
 è nel modulo multithreading. Prima di introdurre thread e broadcast, verifica
 un singolo dialogo request/response con i programmi TCP di questa guida.
 
