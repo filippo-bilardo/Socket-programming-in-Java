@@ -114,7 +114,7 @@ Crea nella tua cartella `~/socket` un progetto `ES03-MultiThread` con una sottoc
 
 ```bash
 # Vai nella cartella dove hai i file Java
-cd ES03-MultiThread/src
+cd ES04a-MultiThread/
 
 # Compila tutti e tre i file
 javac -encoding UTF-8 MultiThreadServer.java ClientTask.java SimpleClient.java

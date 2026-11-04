@@ -30,11 +30,11 @@ SPECIFICHE.md
 
 tmp/
 
-# Modulo 04: pubblicare soltanto gli esercizi a, b e c e il loro indice.
+# Modulo 04: pubblicare gli esercizi a, b, c, d e il loro indice.
 # Le altre esercitazioni rimangono disponibili localmente.
 /04-Multithread/esercizi/*
 !/04-Multithread/esercizi/README.md
-!/04-Multithread/esercizi/a-ChatServer-Multithreaded/
+!/04-Multithread/esercizi/d-ChatServer-Multithreaded/
 !/04-Multithread/esercizi/b-Dispenser/
 !/04-Multithread/esercizi/c-Prenotazioni/
 

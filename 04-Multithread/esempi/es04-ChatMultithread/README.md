@@ -471,7 +471,7 @@ Chiamare `run()` direttamente lo esegue nel thread attuale. Devi usare `start()`
 - **Lambda**: Una forma concisa per esprimere un Runnable
 
 Tutte e tre le versioni sono equivalenti in termini di performance. La scelta dipende dal vostro stile di programmazione e dai requisiti del progetto.
-[Indice degli esempi](../README.md) · [Esercizio chat con broadcast](../../esercizi/a-ChatServer-Multithreaded/README.md)
+[Indice degli esempi](../README.md) · [Esercizio chat con broadcast](../../esercizi/d-ChatServer-Multithreaded/README.md)
 
 
 ## Confini delle prove

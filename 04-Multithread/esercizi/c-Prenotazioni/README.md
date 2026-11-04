@@ -92,7 +92,7 @@ Simulare un sistema di prenotazione posti aereo dove i client possono:
    - **Visualizza mappa** con formato grafico:
      ```
      === MAPPA POSTI AEREO ===
-          A    B    C    D
+         A    B    C    D
      1  [ ]  [ ]  [X]  [ ]
      2  [X]  [ ]  [ ]  [X]
      3  [ ]  [ ]  [ ]  [ ]
@@ -153,7 +153,7 @@ Login effettuato con successo!
 Scelta > 1
 
 === MAPPA POSTI AEREO ===
-     A    B    C    D
+    A    B    C    D
 1  [ ]  [ ]  [ ]  [ ]
 2  [ ]  [ ]  [ ]  [ ]
 3  [ ]  [ ]  [ ]  [ ]
@@ -176,7 +176,7 @@ Posto (A-D): A
 Scelta > 1
 
 === MAPPA POSTI AEREO ===
-     A    B    C    D
+    A    B    C    D
 1  [X]  [ ]  [ ]  [ ]
 2  [ ]  [ ]  [ ]  [ ]
 3  [ ]  [ ]  [ ]  [ ]
@@ -253,10 +253,10 @@ Posto (A-D): B
 │  - AutenticazioneManager (opzionale)     │
 │  - ClientHandler thread per ogni client  │
 └──────────────────────────────────────────┘
-              ▲         ▲         ▲
-              │         │         │
-       ┌──────┘    ┌────┘    └─────┐
-       │           │                │
+              ▲        ▲      ▲
+              │        │      │
+       ┌──────┘   ┌────┘      └────┐
+       │          │                │
   ┌────▼─────┐ ┌──▼──────┐  ┌──────▼──────┐
   │ Client   │ │ Client  │  │ Client      │
   │ (mario)  │ │ (luigi) │  │ (anna)      │
@@ -267,7 +267,7 @@ Posto (A-D): B
 #### 1.3 Protocollo di Comunicazione
 ```
 Client → Server:
-- "AUTH username password"   - Autenticazione
+- "AUTH username password"    - Autenticazione
 - "VISUALIZZA"                - Richiede mappa posti
 - "PRENOTA fila posto"        - Es: "PRENOTA 1 A"
 - "CANCELLA fila posto"       - Es: "CANCELLA 1 A"
@@ -277,12 +277,12 @@ Client → Server:
 Server → Client:
 - "AUTH_OK"                   - Login riuscito
 - "AUTH_FAIL messaggio"       - Login fallito
-- "MAPPA\n[dati matrice]\nEND"     - Invia mappa serializzata
+- "MAPPA\n[dati matrice]\nEND" - Invia mappa serializzata
 - "PRENOTA_OK posto"          - Prenotazione confermata
 - "PRENOTA_FAIL motivo"       - Prenotazione fallita
 - "CANCELLA_OK posto"         - Cancellazione confermata
 - "CANCELLA_FAIL motivo"      - Cancellazione fallita
-- "LISTA\n[elenco]\nEND"           - Lista prenotazioni
+- "LISTA\n[elenco]\nEND"      - Lista prenotazioni
 ```
 
 ---
@@ -1145,7 +1145,7 @@ Data: [Data]
    - Link al codice sorgente
 
 3. **Repository Git:** (consigliato)
-   - Cartella `/ES02c-Prenotazioni/`
+   - Cartella `/ES04c-Prenotazioni/`
    - README.md con istruzioni
    - .gitignore per .class
 
@@ -1335,7 +1335,7 @@ A: Usa un tiling window manager o cattura l'intero desktop.
 
 ### 📅 **Timeline:**
 - **Assegnazione:** [Data di oggi]
-- **Consegna:** [Data + 2 settimane]
+- **Consegna:** [Data + 1 settimana]
 
 ### 📤 **Modalità Consegna:**
 
@@ -1350,7 +1350,7 @@ A: Usa un tiling window manager o cattura l'intero desktop.
 Opzione A - Repository Git (consigliato):
 ```
 <URL_DEL_TUO_REPOSITORY>
-└── ES02c-Prenotazioni/
+└── ES04c-Prenotazioni/
     ├── README.md
     ├── Posto.java
     ├── AutenticazioneManager.java
@@ -1358,22 +1358,6 @@ Opzione A - Repository Git (consigliato):
     ├── ClientHandler.java
     └── PrenotazioneClient.java
 ```
-
-Opzione B - Google Drive:
-```
-ES02c-Prenotazioni.zip
-├── src/
-│   ├── Posto.java
-│   ├── AutenticazioneManager.java
-│   ├── PrenotazioneServer.java
-│   ├── ClientHandler.java
-│   └── PrenotazioneClient.java
-└── README.txt (istruzioni compilazione)
-```
-
-### 📧 **Contatti:**
-- **Email docente:** [email@scuola.it]
-- **Orario ricevimento:** [Giorni e orari]
 
 ---
 
@@ -1406,8 +1390,9 @@ Questa esercitazione avanzata ti permetterà di:
 ---
 
 *Esercitazione creata per il corso di Sistemi e Reti 3 - ITCS Cannizzaro di Rho*  
-*Anno Scolastico 2025/26*  
+*Anno Scolastico 2026/27*\
 *Versione 1.0 - Novembre 2025*
+*Versione 1.1 - Novembre 2026*
 
 
 [Indice degli esercizi](../README.md) · [Sincronizzazione dei posti](../../03-Sincronizzazione-Risorse-Condivise.md)

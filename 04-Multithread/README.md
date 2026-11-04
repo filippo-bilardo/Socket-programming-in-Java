@@ -13,7 +13,7 @@ Servono classi, interfacce, eccezioni, terminale e il [modulo TCP](../03-Socket-
 | 03 | [Sincronizzazione e risorse condivise](03-Sincronizzazione-Risorse-Condivise.md) | Race condition, synchronized, ReentrantLock, invarianti, snapshot e broadcast |
 | 04 | [Gestione avanzata](04-Multithreading-Avanzato.md) | Pool, code limitate, rifiuti, eccezioni, timeout, logging e arresto |
 
-Prova gli [esempi con comandi di compilazione e avvio](esempi/README.md), poi svolgi gli [esercizi](esercizi/README.md): server essenziale, chat, dispenser e prenotazioni. I frammenti illustrativi e gli scheletri con TODO sono distinti dalle classi complete da salvare nel file omonimo.
+Prova gli [esempi con comandi di compilazione e avvio](esempi/README.md), poi svolgi gli [esercizi](esercizi/README.md): server essenziale, dispenser, prenotazioni e chat. I frammenti illustrativi e gli scheletri con TODO sono distinti dalle classi complete da salvare nel file omonimo.
 
 ## Regole comuni dei programmi
 

@@ -181,7 +181,7 @@ for (ClientHandler client : destinatari) {
 }
 ```
 
-Gli import del frammento sono `java.util.List` e `java.util.ArrayList`; `clients` è la lista condivisa. `ClientHandler` qui è il gestore della [chat](esercizi/a-ChatServer-Multithreaded/README.md), con `sendMessage`, non il gestore echo della guida precedente.
+Gli import del frammento sono `java.util.List` e `java.util.ArrayList`; `clients` è la lista condivisa. `ClientHandler` qui è il gestore della [chat](esercizi/d-ChatServer-Multithreaded/README.md), con `sendMessage`, non il gestore echo della guida precedente.
 
 Un solo thread deve leggere da ciascun input. Più thread che scrivono sullo stesso output devono proteggere **il messaggio completo**, soprattutto per messaggi binari composti da più campi. Non basta che le singole scritture siano protette separatamente. Inizializza gli stream prima di pubblicare il gestore nel registro condiviso.
 
