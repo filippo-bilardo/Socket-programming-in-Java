@@ -16,12 +16,13 @@ Avvia server e client in terminali separati; i comandi `javac` e `java` valgono 
 | [es02-Runnable](es02-Runnable/TcpServer.java) | `java TcpServer` | `java TcpClient` | 8080, righe UTF-8; `quit` chiude localmente il client, il server rileva EOF |
 | [es02-Runnable2](es02-Runnable2/TcpServer.java) | `java TcpServer` | `java TcpClient` | 8080, stesso protocollo; la classe del server implementa anche Runnable |
 | [es03-Lambda](es03-Lambda/TcpServer.java) | `java TcpServer` oppure `java TcpServer_v2` | `java TcpClient` | 8765, righe UTF-8; avvia una sola variante alla volta |
-| [es04-ChatMultithread](es04-ChatMultithread/README.md) | `java Server` | `java Client` | 9876, echo di byte fino a EOF; `shutdownOutput()` conclude l'invio e permette ancora di leggere |
-| [es05-ServerWeb](es05-ServerWeb/README.md) | `java -cp build network.TcpServer` | browser, curl o `java -cp build network.TcpClient` | 8765, risposta HTTP testuale; compilazione con `-d build` descritta nel README |
+| [es04-EchoServerMultithread](es04-EchoServerMultithread/README.md) | `java Server` oppure `node Server.js` | `java Client` | 9876, echo di byte fino a EOF; `shutdownOutput()` conclude l'invio e permette ancora di leggere |
+| [es05-ChatServer-Multithreaded](es05-ChatServer-Multithreaded/README.md) | `java ChatServer` oppure `node ChatServer.js` | `java ChatClient` oppure `node ChatClient.js` | 9999, chat UTF-8 a righe, nomi automatici, broadcast, `/list` e `/quit` |
+| [es06-ServerWeb](es06-ServerWeb/README.md) | `java -cp build network.TcpServer` | browser, curl o `java -cp build network.TcpClient` | 8765, risposta HTTP testuale; compilazione con `-d build` descritta nel README |
 
 L'esempio `Thread` smette di accettare dopo **999 connessioni totali**, non dopo 999 client simultanei; i gestori esistenti proseguono. Le varianti a righe e il server di byte hanno un timeout di lettura di 30 secondi. Una risposta letta come `null` significa EOF; non è un messaggio da mostrare o a cui rispondere.
 
-Il nome storico `es04-ChatMultithread` contiene un **echo**, non ancora un broadcast. Il README confronta tre implementazioni a righe sulla porta 5000 e propone il passaggio alla chat. Per il confronto sequenziale, maiuscole e trasferimento file consulta gli [esempi del modulo TCP](../../03-Socket-TCP/esempi/).
+La cartella `es04-EchoServerMultithread` contiene un **echo di byte**. Il README confronta tre implementazioni a righe sulla porta 5000; il nuovo [esempio di chat](es05-ChatServer-Multithreaded/README.md) completa il passaggio al broadcast. Per il confronto sequenziale, maiuscole e trasferimento file consulta gli [esempi del modulo TCP](../../03-Socket-TCP/esempi/).
 
 ## Pool con connessioni e coda limitate
 

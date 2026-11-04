@@ -9,6 +9,31 @@ Tre varianti:
 2. **Runnable** - Approccio modulare e flessibile
 3. **Lambda** - Approccio moderno e conciso
 
+## Versione Node.js di Server.java — porta 9876
+
+[Server.js](Server.js) riproduce l'echo di byte di [Server.java](Server.java), con timeout di inattività di 30 secondi. Richiede Node.js e usa soltanto il modulo integrato `node:net`, senza installazioni npm.
+
+Dalla cartella corrente, avvia una sola delle due versioni del server:
+
+```sh
+node Server.js
+```
+
+In un secondo terminale, dalla stessa cartella, usa il client Java già presente:
+
+```sh
+javac -encoding UTF-8 Client.java
+java Client
+```
+
+Il client invia `Ciao, server!`, chiude il solo invio con `shutdownOutput()` e legge fino a EOF. La risposta attesa è `Risposta dal server: Ciao, server!`. I comandi funzionano anche in PowerShell; Ctrl+C termina il server. Per provare la versione Java, ferma prima Node.js, compila `Server.java` e avvia `java Server` sulla stessa porta.
+
+La versione Node.js gestisce più connessioni attraverso l'event loop e l'I/O non bloccante. I callback JavaScript non creano un thread dedicato per ogni client: devono rimanere brevi per consentire alle altre connessioni di avanzare. Il server Java usa invece un thread per socket.
+
+`socket.pipe(socket)` rimanda i byte allo stesso mittente senza convertirli in testo e regola il flusso quando il destinatario è lento. Con `allowHalfOpen: true`, l'EOF ricevuto non chiude subito l'output: `pipe()` lo termina dopo aver accodato l'echo, permettendo al client di leggere tutta la risposta. Il timeout Node.js riguarda l'inattività del socket; `setSoTimeout` nel server Java riguarda le letture bloccanti.
+
+Queste due versioni non aggiungono prefissi o delimitatori e non effettuano broadcast. Le tre varianti Java illustrate sotto usano invece righe e la porta 5000. Documentazione: [socket e server TCP Node.js](https://nodejs.org/api/net.html), [stream e pipe](https://nodejs.org/api/stream.html#readablepipedestination-options).
+
 ---
 
 ## Versione 1: Con Estensione di Thread

@@ -888,3 +888,6 @@ Se riesci a implementarne 3+, meriti un **bonus eccezionale!** 🏆
 
 
 Approfondisci [monitor e broadcast](../../03-Sincronizzazione-Risorse-Condivise.md). Il numero nel benvenuto è indicativo: altri client possono entrare o uscire tra conteggio e invio. Nel TODO di disconnessione prevedi rimozione e notifica una sola volta; se un invio con PrintWriter fallisce, controlla `checkError()` e chiudi la sessione. La chiusura della console e quella del socket sono eventi distinti.
+
+
+La [soluzione di riferimento in Java e Node.js](../../esempi/es05-ChatServer-Multithreaded/README.md) completa server, gestori, client e arresto locale, con lo stesso protocollo a righe descritto nella traccia.

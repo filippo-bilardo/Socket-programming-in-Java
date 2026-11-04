@@ -1,5 +1,5 @@
 /**
- * Laboratorio: es04-ChatMultithread, Server.java. JDK 11+.
+ * Laboratorio: es04-EchoServerMultithread, Server.java. JDK 11+.
  * Porta 9876; protocollo: byte fino a EOF; nessun broadcast.
  * Il client usa shutdownOutput e continua a leggere; una read non è un messaggio.
  * Compilare questa cartella separatamente dalle altre varianti.
