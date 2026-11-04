@@ -35,6 +35,7 @@ tmp/
 /04-Multithread/esercizi/*
 !/04-Multithread/esercizi/README.md
 !/04-Multithread/esercizi/d-ChatServer-Multithreaded/
+!/04-Multithread/esercizi/d-ChatRoomTcpMultiClient/
 !/04-Multithread/esercizi/b-Dispenser/
 !/04-Multithread/esercizi/c-Prenotazioni/
 
