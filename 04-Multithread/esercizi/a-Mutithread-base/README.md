@@ -26,6 +26,7 @@ public class MultiThreadServer {
             System.out.println("Server in ascolto sulla porta 5000");
             while (true) {
                 Socket socket = listener.accept(); // Solo questa attesa riguarda il listener.
+                // Crea un thread per gestire il client e lo avvia immediatamente.
                 new Thread(new ClientTask(socket)).start();
             }
         }
@@ -34,6 +35,7 @@ public class MultiThreadServer {
 ```
 
 Noti come il codice è semplice? La vera magia avviene nel fatto che ogni volta che creiamo `new Thread(new ClientTask(client))` e chiamiamo `start()`, quel thread esegue il suo codice indipendentemente mentre il server continua il loop e accetta il prossimo client.
+`new ClientTask(client)` crea un oggetto che implementa Runnable, e il thread esegue il metodo run() di quell'oggetto.
 
 ### ClientTask.java
 
@@ -51,10 +53,16 @@ public class ClientTask implements Runnable {
     public void run() {
         try (Socket owned = socket) {
             socket.setSoTimeout(30_000); // Limita le letture di un client inattivo.
+
+            // Creiamo un BufferedReader e un PrintWriter per leggere e scrivere righe UTF-8.
             BufferedReader in = new BufferedReader(new InputStreamReader(
                     socket.getInputStream(), StandardCharsets.UTF_8));
             PrintWriter out = new PrintWriter(socket.getOutputStream(), true, StandardCharsets.UTF_8);
+            
+            // Stampa il nome del thread per distinguere i gestori.
+            // Ogni thread ha il suo nome, come Thread-0, Thread-1, ecc.
             System.out.println("Gestore: " + Thread.currentThread().getName());
+            // Legge una riga dal client e risponde con un messaggio.
             String message = in.readLine();
             if (message == null) return; // EOF senza richiesta: non rispondere al testo "null".
             out.println("Server: Ho ricevuto il tuo messaggio: " + message);
@@ -87,13 +95,17 @@ public class SimpleClient {
         try (Socket socket = new Socket("localhost", 5000);
              Scanner keyboard = new Scanner(System.in)) {
             socket.setSoTimeout(30_000);
+
+            // Crea un BufferedReader e un PrintWriter per leggere e scrivere righe UTF-8.
             PrintWriter out = new PrintWriter(socket.getOutputStream(), true, StandardCharsets.UTF_8);
             BufferedReader in = new BufferedReader(new InputStreamReader(
                     socket.getInputStream(), StandardCharsets.UTF_8));
+
+            // Chiede all'utente di scrivere un messaggio, lo invia al server e stampa la risposta.
             System.out.println("Scrivi un messaggio:");
-            if (!keyboard.hasNextLine()) return;
-            out.println(keyboard.nextLine()); // La newline rende completa la richiesta.
-            String response = in.readLine();
+            if (!keyboard.hasNextLine()) return; // Nessun input: esci.
+            out.println(keyboard.nextLine());   // La newline rende completa la richiesta.
+            String response = in.readLine();    // Legge la risposta del server.
             if (response != null) System.out.println("Risposta: " + response);
         }
     }
@@ -117,6 +129,8 @@ Crea nella tua cartella `~/socket` un progetto `ES03-MultiThread` con una sottoc
 cd ES04a-MultiThread/
 
 # Compila tutti e tre i file
+# -encoding UTF-8 assicura che i file siano letti correttamente se contengono caratteri speciali.
+# non è necessario se i file sono in ASCII puro.
 javac -encoding UTF-8 MultiThreadServer.java ClientTask.java SimpleClient.java
 
 # Dovresti vedere la creazione di tre file .class
@@ -190,7 +204,9 @@ public class MultiThreadServerWithLoop {
         try (ServerSocket listener = new ServerSocket(5000)) {
             System.out.println("Server in ascolto sulla porta 5000");
             while (true) {
+                // Accetta una connessione in entrata.
                 Socket socket = listener.accept(); // Solo questa attesa riguarda il listener.
+                // ottenuto il socket, crea un thread per gestire il client e lo avvia immediatamente.
                 new Thread(new ClientTaskWithLoop(socket)).start();
             }
         }
@@ -214,10 +230,15 @@ public class ClientTaskWithLoop implements Runnable {
     public void run() {
         try (Socket owned = socket) {
             socket.setSoTimeout(30_000); // Limita le letture di un client inattivo.
+
+            // Crea un BufferedReader e un PrintWriter per leggere e scrivere righe UTF-8.
             BufferedReader in = new BufferedReader(new InputStreamReader(
                     socket.getInputStream(), StandardCharsets.UTF_8));
             PrintWriter out = new PrintWriter(socket.getOutputStream(), true, StandardCharsets.UTF_8);
+            
+            // Stampa il nome del thread per distinguere i gestori.
             System.out.println("Gestore: " + Thread.currentThread().getName());
+            // Loop per leggere messaggi multipli dal client finché non invia "exit".
             String message;
             while ((message = in.readLine()) != null) {
                 if (message.equalsIgnoreCase("exit")) {
@@ -248,10 +269,14 @@ public class SimpleClientWithLoop {
         try (Socket socket = new Socket("localhost", 5000);
              Scanner keyboard = new Scanner(System.in)) {
             socket.setSoTimeout(30_000);
+
+            // Crea un BufferedReader e un PrintWriter per leggere e scrivere righe UTF-8.
             PrintWriter out = new PrintWriter(socket.getOutputStream(), true, StandardCharsets.UTF_8);
             BufferedReader in = new BufferedReader(new InputStreamReader(
                     socket.getInputStream(), StandardCharsets.UTF_8));
+
             System.out.println("Scrivi un messaggio (exit per uscire):");
+            // Loop per inviare messaggi multipli al server finché non si digita "exit".        
             while (keyboard.hasNextLine()) {
                 String message = keyboard.nextLine();
                 out.println(message);

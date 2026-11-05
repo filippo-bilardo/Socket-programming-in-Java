@@ -13,6 +13,9 @@ public class ThreadConParametri implements Runnable {
         for (int i = 0; i < ripetizioni; i++) {
             System.out.println(messaggio + " (" + (i+1) + "/" + ripetizioni + ")");
             try {
+                // sleep è un metodo statico della classe Thread che sospende 
+                // l'esecuzione del thread corrente per un determinato periodo 
+                // di tempo (in millisecondi).
                 Thread.sleep(1000); // Pausa di 1 secondo
             } catch (InterruptedException e) {
                 System.out.println("Thread interrotto");
